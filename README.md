@@ -35,20 +35,20 @@ This Python project allows the conversion of PlantUML activity diagrams into the
    ```bash
    python p2dapp.py
    ```
-2. Click on **"Select File"** to load a PlantUML file (supported file types include *.puml, *.plantuml, *.uml, *.txt).
+2. Click on **"Open File"** to load a PlantUML file (supported file types include *.puml, *.plantuml, *.uml, *.txt).
 3. The content of the file will be displayed in the text area.
-4. Click **"Convert to draw.io"** to convert the PlantUML code into Draw.io XML format and choose a location to save the generated file.
+4. Click **"Convert to Draw.io"** to convert the PlantUML code into Draw.io XML format and choose a location to save the generated file.
 
 ### Command-Line Interface (CLI)
 
 You can also convert files directly via the command line:
 
 ```bash
-python pumltodrawio.py <input_plantuml_file> <output_drawio_file>
+python p2dcore.py <input_plantuml_file> <output_drawio_file>
 ```
 Example:
 ```bash
-python pumltodrawio.py testdata/test3.puml output.xml
+python p2dcore.py testdata/test3.puml output.drawio
 ```
 
 ## Examples
