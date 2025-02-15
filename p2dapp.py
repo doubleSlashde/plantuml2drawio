@@ -20,11 +20,11 @@ class FileSelectorApp:
         self.left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         
         # "Select File"-Button oben im linken Bereich
-        self.file_button = tk.Button(self.left_frame, text="Select File", command=self.open_file)
+        self.file_button = tk.Button(self.left_frame, text="Open File", command=self.open_file)
         self.file_button.pack(side="top", fill="x", pady=(0, 5))
         
         # "Convert to draw.io"-Button direkt darunter
-        self.convert_button = tk.Button(self.left_frame, text="Convert to draw.io", command=self.convert_to_drawio)
+        self.convert_button = tk.Button(self.left_frame, text="Convert to Draw.io", command=self.convert_to_drawio)
         self.convert_button.pack(side="top", fill="x")
         
         # Ein expandierender Spacer, der den restlichen Platz einnimmt
@@ -145,9 +145,9 @@ class FileSelectorApp:
 
             # Speicherdialog anzeigen, um den Speicherort für die draw.io-Datei auszuwählen
             save_path = filedialog.asksaveasfilename(
-                title="Save draw.io file",
-                defaultextension=".xml",
-                filetypes=[("XML Files", "*.xml")]
+                title="Save Draw.io file",
+                defaultextension=".drawio",
+                filetypes=[("Draw.io Files", "*.drawio")]
             )
 
             if save_path:

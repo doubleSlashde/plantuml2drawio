@@ -1,16 +1,16 @@
 @startuml Activity Example
 start
-  :Aktion;
-  :Aktion2;
-  if (Bedingung) then (Ja)
-    :Aktion3;
-  else (Nein)
-    :Aktion4;
-    if (Bedingung2) then (Ja2)
-      :Aktion5;
-    else (Nein2)
-      :Aktion6;
-    endif
+:Aktion;
+:Aktion2;
+if (Bedingung) then (Ja)
+  :Aktion3;
+else (Nein)
+  :Aktion4;
+  if (Bedingung2) then (Ja2)
+    :Aktion5;
+  else (Nein2)
+    :Aktion6;
   endif
+endif
 stop
 @enduml

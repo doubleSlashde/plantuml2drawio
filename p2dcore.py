@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import sys
-import re
 import xml.etree.ElementTree as ET
 
 # Klassen zur Repräsentation von Knoten und Kanten im Diagramm
@@ -204,7 +203,7 @@ def parse_plantuml(filename):
                     node_y = current_if["true_y"]
                     x_coord = current_x
                     node = Node(id=str(node_counter), label=label, shape="rectangle",
-                                x=x_coord, y=node_y, width=100, height=40)
+                                x=x_coord, y=node_y, width=120, height=40)
                     nodes.append(node)
                     if current_if["true_last"] is None:
                         # Verbinde vom Entscheidungsknoten mit Label "Ja"
@@ -222,7 +221,7 @@ def parse_plantuml(filename):
                     node_y = current_if["false_y"]
                     x_coord = current_x + 150
                     node = Node(id=str(node_counter), label=label, shape="rectangle",
-                                x=x_coord, y=node_y, width=100, height=40)
+                                x=x_coord, y=node_y, width=120, height=40)
                     nodes.append(node)
                     if current_if["false_last"] is None:
                         edges.append(Edge(id=str(edge_counter), source=current_if["decision"], target=node.id, label=current_if["false_label"]))
@@ -237,7 +236,7 @@ def parse_plantuml(filename):
             else:
                 # Normale Aktivitätsknoten (außerhalb eines if-Blocks)
                 node = Node(id=str(node_counter), label=label, shape="rectangle",
-                            x=current_x, y=current_y, width=100, height=40)
+                            x=current_x, y=current_y, width=120, height=40)
                 nodes.append(node)
                 if last_node_id is not None:
                     edges.append(Edge(id=str(edge_counter), source=last_node_id, target=node.id))
@@ -343,13 +342,51 @@ def create_drawio_xml(nodes, edges):
             "source": edge.source,
             "target": edge.target,
             "parent": "1",
-            "style": "edgeStyle=elbowEdgeStyle;elbow=vertical;"
+            "style": "edgeStyle=elbowEdgeStyle;elbow=vertical;strokeWidth=1.5;"
         }
         cell = ET.SubElement(root, "mxCell", cell_attribs)
         ET.SubElement(cell, "mxGeometry", {"relative": "1", "as": "geometry"})
 
     # Erzeuge den XML-String
     return ET.tostring(mxfile, encoding="utf-8", method="xml").decode("utf-8")
+
+def is_valid_plantuml_activitydiagram(filename):
+    """
+    Überprüft, ob die gegebene Datei ein gültiges PlantUML-Aktivitätsdiagramm enthält.
+
+    Kriterien:
+      - Die Datei muss die Marker @startuml und @enduml enthalten.
+      - Die Datei muss die Schlüsselwörter 'start' und 'stop' beinhalten.
+      - Es muss mindestens eine Aktivitätszeile vorhanden sein (z.B. im Format :Text;)
+        oder alternativ ein If-Block mit 'if' und 'endif'.
+
+    Rückgabe:
+      - True, wenn alle Kriterien erfüllt sind.
+      - False ansonsten.
+    """
+    try:
+        with open(filename, "r", encoding="utf-8") as f:
+            content = f.read()
+    except Exception as e:
+        # Falls die Datei nicht gelesen werden kann, wird False zurückgegeben.
+        return False
+
+    # Überprüfe, ob @startuml und @enduml in der Datei vorhanden sind.
+    if "@startuml" not in content or "@enduml" not in content:
+        return False
+
+    # Überprüfe, ob 'start' und 'stop' enthalten sind (unabhängig von Groß-/Kleinschreibung).
+    if "start" not in content.lower() or "stop" not in content.lower():
+        return False
+
+    import re
+    # Überprüfe, ob mindestens eine Aktivitätszeile (z. B. :Text;) enthalten ist.
+    if not re.search(r":(.+);", content):
+        # Falls keine Aktivitätszeile gefunden wurde, prüfen wir alternativ, ob ein If-Block existiert.
+        if "if" not in content.lower() or "endif" not in content.lower():
+            return False
+
+    return True
 
 def main():
     if len(sys.argv) != 3:
@@ -358,6 +395,10 @@ def main():
 
     input_file = sys.argv[1]
     output_file = sys.argv[2]
+
+    if not is_valid_plantuml_activitydiagram(input_file):
+        print("Error: The file is not a valid PlantUML activity diagram.")
+        sys.exit(1)
 
     nodes, edges = parse_plantuml(input_file)
     xml_content = create_drawio_xml(nodes, edges)

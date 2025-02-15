@@ -1,0 +1,19 @@
+@startuml
+
+!include https://raw.githubusercontent.com/doubleSlashde/umltheme/main/puml-theme-doubleslash-activity.puml
+
+
+start
+:Kunde besucht \nden Online-Shop;
+if (Produkt auswählen über Suchfunktion) then (ja)
+    :Kunde sucht sein Produkt \nüber die Suchfunktion;
+    :Kunde wählt ein Produkt \naus den Suchvorschlägen;
+else (nein)
+    :Kunde wählt ein Produkt von \nder Startseite des Shops;
+    :Kunde liest die Beschreibung \ndes Produkts auf der Produktseite;
+endif
+
+
+stop
+
+@enduml
