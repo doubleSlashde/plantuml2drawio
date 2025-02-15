@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import os
 import tempfile
-from pumltodrawio import parse_plantuml, create_drawio_xml
+from p2dcore import parse_plantuml, create_drawio_xml
 
 class FileSelectorApp:
     def __init__(self, root):
