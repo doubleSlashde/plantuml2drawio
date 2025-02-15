@@ -7,6 +7,5 @@ start
   else (Nein2)
     :Aktion4;
   endif
-  endif
 stop
 @enduml

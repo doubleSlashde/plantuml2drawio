@@ -57,9 +57,43 @@ The `testdata` folder contains example PlantUML files (such as `test1.puml`, `te
 
 ## Contributors
 
-- Your Name
-- Other Contributors
+- Konrad Krafft
+- ...
 
 ## License
 
 This project is licensed under the MIT License. Please see the [LICENSE](LICENSE) file for details. 
+
+# Creating platform specific executables
+
+**Converting 'p2dapp' into a Native Executable Using PyInstaller**
+
+1. **Installation**  
+   Install PyInstaller using pip:
+   ```bash
+   pip install pyinstaller
+   ```
+
+2. **Creating the Executable**  
+   Navigate to the directory containing the 'p2dapp.py' file and run for MacOS executable:
+   ```bash
+   pyinstaller --onefile --noconsole --icon=p2dapp_icon.icns p2dapp.py
+   ```
+   and for Windows and Linux executables:
+   ```bash
+   pyinstaller --onefile --noconsole --icon=p2dapp_icon.ico p2dapp.py
+   ```
+   
+   - The `--onefile` flag bundles all dependencies into a single executable.
+   - The `--noconsole` flag prevents the console window from appearing, which is ideal for GUI applications built with tkinter. (Omit this flag if you need the console for debugging.)
+
+3. **Verifying the Build**  
+   After the process completes, you will find the executable in the `dist` directory. Test the executable on your system to ensure it works as expected.
+
+4. **Additional Notes**  
+   - **Platform Specific**: The generated executable is platform-specific, meaning you need to build separate executables for Windows, macOS, and Linux.
+   - **adding icon file to the executable**: add the icon file to the project directory and add the following option to the pyinstaller command: 
+     - `--icon=p2dapp_icon.ico` in case of Windows or Linux
+     - `--icon=p2dapp_icon.icns` in case of macOS
+   - **Testing on a Clean System**: It's recommended to test the build on a system without Python installed to ensure that all dependencies are correctly bundled.
+
