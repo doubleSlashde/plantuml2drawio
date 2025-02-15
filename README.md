@@ -19,12 +19,12 @@ This Python project allows the conversion of PlantUML activity diagrams into the
 2. **Clone the Repository:**  
    Open your terminal and run:
    ```bash
-   git clone https://github.com/your-username/your-repository.git
+   git clone https://github.com/doubleSlashde/plantuml2drawio.git
    ```
 
 3. **Navigate to the Project Directory:**
    ```bash
-   cd your-repository
+   cd plantuml2drawio
    ```
 
 ## Usage
