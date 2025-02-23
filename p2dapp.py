@@ -55,6 +55,7 @@ class FileSelectorApp:
         self.text_widget.grid(row=0, column=0, sticky="nsew")
         self.text_widget.tag_configure("plantuml", foreground="#800000", font=self.default_font)
         self.text_widget.tag_configure("keyword", foreground="#F000F0", font=self.default_font)
+        self.text_widget.tag_configure("condition", foreground="blue", font=self.default_font)
         self.text_widget.bind("<KeyRelease>", lambda event: self.highlight_plantuml())
 
         # Vertical scrollbar for the text widget
@@ -149,11 +150,12 @@ class FileSelectorApp:
         self.highlight_plantuml()
 
     def highlight_plantuml(self):
-        """Highlights specific keywords in the text widget using clear magenta (#F000F0)."""
-        # Remove existing highlights with the "keyword" tag
+        """Hervorhebung der Schlüsselwörter und Bedingungen (in blau) im Text-Widget."""
+        # Entferne vorhandene Hervorhebungen
         self.text_widget.tag_remove("keyword", "1.0", tk.END)
+        self.text_widget.tag_remove("condition", "1.0", tk.END)
         
-        # List of keywords to be highlighted
+        # Hervorhebung von Schlüsselwörtern
         for pattern in ["if", "then", "else", "endif", "start", "stop", "@startuml", "@enduml"]:
             start_idx = "1.0"
             while True:
@@ -163,6 +165,40 @@ class FileSelectorApp:
                 end_pos = f"{pos}+{len(pattern)}c"
                 self.text_widget.tag_add("keyword", pos, end_pos)
                 start_idx = end_pos
+        
+        # Hervorhebung von Bedingungen in Klammern direkt nach "if"
+        content = self.text_widget.get("1.0", tk.END)
+        start_search = 0
+        while True:
+            # Suche nach einer "if"-Anweisung im gesamten Text
+            if_idx = content.find("if", start_search)
+            if if_idx == -1:
+                break
+            
+            # Suche nach der öffnenden Klammer direkt nach "if"
+            open_paren_idx = content.find("(", if_idx)
+            if open_paren_idx == -1:
+                start_search = if_idx + 2
+                continue
+            
+            # Sicherstellen, dass zwischen "if" und "(" nur Leerzeichen stehen
+            between_text = content[if_idx+2:open_paren_idx]
+            if between_text.strip() != "":
+                start_search = open_paren_idx + 1
+                continue
+            
+            # Suche nach der schließenden Klammer
+            close_paren_idx = content.find(")", open_paren_idx)
+            if close_paren_idx == -1:
+                start_search = open_paren_idx + 1
+                continue
+            
+            # Bestimme die Textindizes für den Bedingungstext (ohne Klammern)
+            start_condition = f"1.0+{open_paren_idx+1}c"
+            end_condition = f"1.0+{close_paren_idx}c"
+            self.text_widget.tag_add("condition", start_condition, end_condition)
+            
+            start_search = close_paren_idx + 1
 
     def convert_to_drawio(self):
         # Retrieve the content of the text widget (PlantUML code)
@@ -199,23 +235,26 @@ class FileSelectorApp:
 
 def main():
     root = tk.Tk()
+    # Anwendungsname in der Menüleiste ändern (wichtig vor der weiteren Konfiguration)
+    root.tk.call('tk', 'appname', 'plantuml2drawio')
+    
     import sys
-    # Set the icon cross-platform:
+    # Setze das Icon plattformübergreifend:
     if sys.platform.startswith('win'):
         try:
             root.iconbitmap("p2dapp_icon.ico")
         except Exception as e:
-            print("Error loading icon on Windows:", e)
+            print("Fehler beim Laden des Icons unter Windows:", e)
     else:
         try:
             icon = tk.PhotoImage(file="p2dapp_icon.png")
             root.iconphoto(False, icon)
         except Exception as e:
-            print("Error loading icon on macOS/Linux:", e)
+            print("Fehler beim Laden des Icons unter macOS/Linux:", e)
 
     app = FileSelectorApp(root)
     
-    # Bring window to front and force focus
+    # Fenster in den Vordergrund bringen und Fokus erzwingen
     root.lift()
     root.attributes("-topmost", True)
     root.after(100, lambda: root.focus_force())
