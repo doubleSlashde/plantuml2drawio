@@ -20,9 +20,10 @@ class Edge:
         self.target = target
         self.label = label
 
-def parse_plantuml(filename):
+def parse_plantuml(plantuml_content):
     """
     Parst eine vereinfachte Variante eines PlantUML Aktivitätsdiagramms.
+    Erwartet den Inhalt einer PlantUML-Datei als String.
     Unterstützte Elemente:
       - start und stop
       - Aktivitäten in der Form :Text;
@@ -48,9 +49,8 @@ def parse_plantuml(filename):
     import re
     import xml.etree.ElementTree as ET
 
-    # Datei einlesen
-    with open(filename, "r", encoding="utf-8") as f:
-        lines = f.readlines()
+    # Dateiinhalt in Zeilen aufteilen
+    lines = plantuml_content.splitlines()
 
     nodes = []
     edges = []
@@ -400,7 +400,10 @@ def main():
         print("Error: The file is not a valid PlantUML activity diagram.")
         sys.exit(1)
 
-    nodes, edges = parse_plantuml(input_file)
+    with open(input_file, "r", encoding="utf-8") as f:
+        plantuml_content = f.read()
+
+    nodes, edges = parse_plantuml(plantuml_content)
     xml_content = create_drawio_xml(nodes, edges)
 
     with open(output_file, "w", encoding="utf-8") as f:

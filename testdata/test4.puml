@@ -1,8 +1,5 @@
 @startuml
 
-!include https://raw.githubusercontent.com/doubleSlashde/umltheme/main/puml-theme-doubleslash-activity.puml
-
-
 start
 :Kunde besucht \nden Online-Shop;
 if (Produkt auswählen über Suchfunktion) then (ja)
