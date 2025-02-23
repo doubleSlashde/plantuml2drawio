@@ -77,11 +77,11 @@ This project is licensed under the MIT License. Please see the [LICENSE](LICENSE
 2. **Creating the Executable**  
    Navigate to the directory containing the 'p2dapp.py' file and run for MacOS executable:
    ```bash
-   pyinstaller --onefile --noconsole --icon=p2dapp_icon.icns p2dapp.py
+   pyinstaller --onefile --noconsole --icon=p2dapp_icon.icns --name plantuml2drawio p2dapp.py
    ```
    and for Windows and Linux executables:
    ```bash
-   pyinstaller --onefile --noconsole --icon=p2dapp_icon.ico p2dapp.py
+   pyinstaller --onefile --noconsole --icon=p2dapp_icon.ico --name plantuml2drawio p2dapp.py
    ```
    
    - The `--onefile` flag bundles all dependencies into a single executable.
