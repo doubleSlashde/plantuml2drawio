@@ -1,0 +1,126 @@
+{
+  "nodes": [
+    {
+      "id": "2",
+      "label": "Start",
+      "shape": "ellipse",
+      "x": 60,
+      "y": 60,
+      "width": 40,
+      "height": 40
+    },
+    {
+      "id": "3",
+      "label": "Start des Prozesses",
+      "shape": "rectangle",
+      "x": 60,
+      "y": 140,
+      "width": 120,
+      "height": 40
+    },
+    {
+      "id": "4",
+      "label": "Bedingung erfüllt?",
+      "shape": "hexagon",
+      "x": 60,
+      "y": 220,
+      "width": 100,
+      "height": 40
+    },
+    {
+      "id": "5",
+      "label": "Aktion 1 ausführen",
+      "shape": "rectangle",
+      "x": 60,
+      "y": 300,
+      "width": 120,
+      "height": 40
+    },
+    {
+      "id": "6",
+      "label": "Aktion 2 ausführen",
+      "shape": "rectangle",
+      "x": 210,
+      "y": 300,
+      "width": 120,
+      "height": 40
+    },
+    {
+      "id": "7",
+      "label": "Merge",
+      "shape": "rhombus",
+      "x": 60,
+      "y": 380,
+      "width": 50,
+      "height": 50
+    },
+    {
+      "id": "8",
+      "label": "Prozess beenden",
+      "shape": "rectangle",
+      "x": 60,
+      "y": 460,
+      "width": 120,
+      "height": 40
+    },
+    {
+      "id": "9",
+      "label": "Stop",
+      "shape": "ellipse",
+      "x": 60,
+      "y": 540,
+      "width": 40,
+      "height": 40
+    }
+  ],
+  "edges": [
+    {
+      "id": "1",
+      "source": "2",
+      "target": "3",
+      "label": ""
+    },
+    {
+      "id": "2",
+      "source": "3",
+      "target": "4",
+      "label": ""
+    },
+    {
+      "id": "3",
+      "source": "4",
+      "target": "5",
+      "label": "Ja"
+    },
+    {
+      "id": "4",
+      "source": "4",
+      "target": "6",
+      "label": "Nein"
+    },
+    {
+      "id": "5",
+      "source": "5",
+      "target": "7",
+      "label": ""
+    },
+    {
+      "id": "6",
+      "source": "6",
+      "target": "7",
+      "label": ""
+    },
+    {
+      "id": "7",
+      "source": "7",
+      "target": "8",
+      "label": ""
+    },
+    {
+      "id": "8",
+      "source": "8",
+      "target": "9",
+      "label": ""
+    }
+  ]
+}

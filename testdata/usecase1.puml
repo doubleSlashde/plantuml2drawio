@@ -1,0 +1,13 @@
+@startuml
+actor User
+rectangle "Login System" {
+    usecase "Enter Credentials" as UC1
+    usecase "Authenticate User" as UC2
+    usecase "Show Dashboard" as UC3
+}
+
+User --> UC1
+UC1 --> UC2
+UC2 --> UC3
+
+@enduml

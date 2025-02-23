@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import os
 import tempfile
-from p2dcore import parse_plantuml, create_drawio_xml
+from p2dcore import parse_plantuml_activity, create_drawio_xml, is_valid_plantuml_activitydiagram_string
 import tkinter.font as tkFont
 
 class FileSelectorApp:
@@ -11,15 +11,14 @@ class FileSelectorApp:
         self.root.title("PlantUML to Draw.io Converter")
         self.root.geometry("800x600")  # Larger window for better overview
 
-        # Create menu bar for additional convenience
+        # Create menubar
         self.create_menubar()
 
         # Configure main grid
         self.root.columnconfigure(0, weight=1)
-        # Set row 2 (the main frame) to be expandable
-        self.root.rowconfigure(2, weight=1)
+        self.root.rowconfigure(2, weight=1)  # Row 2 (main frame) is dynamically expandable
 
-        # Row 0: File name label
+        # Row 0: Filename label
         self.filename_label = tk.Label(
             self.root, 
             text="No file selected.",
@@ -28,7 +27,7 @@ class FileSelectorApp:
         )
         self.filename_label.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 5))
 
-        # Row 1: Message label (for notifications and errors)
+        # Row 1: Message label (for hints and error messages)
         self.message_label = tk.Label(
             self.root, 
             text="",
@@ -37,16 +36,16 @@ class FileSelectorApp:
         )
         self.message_label.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 5))
 
-        # Row 2: Main frame for text widget and scrollbar to ensure responsive design
+        # Row 2: Main frame for the text widget and scrollbar (ensures responsive design)
         self.main_frame = tk.Frame(self.root)
         self.main_frame.grid(row=2, column=0, sticky="nsew", padx=10, pady=5)
         self.main_frame.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(0, weight=1)
 
-        # Set default font for the text widget
+        # Default font for the text widget
         self.default_font = tkFont.Font(family="Courier New", size=14)
         
-        # Text widget to display file content
+        # Text widget to display file contents
         self.text_widget = tk.Text(
             self.main_frame, 
             wrap="word",
@@ -56,7 +55,10 @@ class FileSelectorApp:
         self.text_widget.tag_configure("plantuml", foreground="#800000", font=self.default_font)
         self.text_widget.tag_configure("keyword", foreground="#F000F0", font=self.default_font)
         self.text_widget.tag_configure("condition", foreground="blue", font=self.default_font)
-        self.text_widget.bind("<KeyRelease>", lambda event: self.highlight_plantuml())
+        
+        # Bind syntax highlighting (changes here only affect highlighting; 
+        # the button remains unaffected)
+        self.text_widget.bind("<KeyRelease>", lambda event: self.highlight_plant_uml_activity())
 
         # Vertical scrollbar for the text widget
         self.scrollbar = tk.Scrollbar(self.main_frame, orient="vertical", command=self.text_widget.yview)
@@ -77,8 +79,14 @@ class FileSelectorApp:
         spacer = tk.Label(self.button_frame, text="")
         spacer.grid(row=0, column=1, sticky="ew")
 
-        # "Convert to Draw.io" button on the right
-        self.convert_button = tk.Button(self.button_frame, text="Convert to Draw.io", command=self.convert_to_drawio)
+        # "Convert to Draw.io" button on the right; 
+        # initially disabled
+        self.convert_button = tk.Button(
+            self.button_frame, 
+            text="Convert to Draw.io", 
+            command=self.convert_to_drawio,
+            state=tk.DISABLED
+        )
         self.convert_button.grid(row=0, column=2, sticky="e")
 
         # Row 4: Footer with copyright notice
@@ -93,7 +101,7 @@ class FileSelectorApp:
         )
         self.copyright_label.grid(row=0, column=0, sticky="w")
 
-        # Variable to store current file name (without extension)
+        # Variable to store the current filename (without extension)
         self.current_file = None
     
     def create_menubar(self):
@@ -120,42 +128,52 @@ class FileSelectorApp:
         messagebox.showinfo("About", "PlantUML to Draw.io Converter\n© 2025 doubleSlash.de")
 
     def open_file(self):
-        # Method to open files
         file_path = filedialog.askopenfilename(
-            title="Select File",
+            title="Select a File",
             filetypes=[("PlantUML and Text Files", ("*.puml", "*.txt", "*.plantuml", "*.uml"))]
         )
-    
         if file_path:
-            # Store the current file name without extension
             self.current_file = os.path.splitext(os.path.basename(file_path))[0]
-            self.filename_label.config(text=f"Loaded file: {os.path.basename(file_path)}")
+            self.filename_label.config(text=f"Loaded File: {os.path.basename(file_path)}")
             try:
                 with open(file_path, "r", encoding="utf-8") as file:
                     content = file.read()
-                # Clear any previous message
-                self.message_label.config(text="File loaded successfully.")
+                if not is_valid_plantuml_activitydiagram_string(content):
+                    self.message_label.config(text="Invalid PlantUML activity diagram. Conversion disabled.")
+                    self.convert_button.config(state=tk.DISABLED)
+                else:
+                    self.message_label.config(text="File loaded successfully.")
+                    self.convert_button.config(state=tk.NORMAL)
             except Exception as e:
                 content = ""
                 self.message_label.config(text=f"Error loading file: {e}")
+                self.convert_button.config(state=tk.DISABLED)
         else:
             self.filename_label.config(text="No file selected.")
-            content = ""
             self.message_label.config(text="No file selected.")
-    
+            content = ""
+            self.convert_button.config(state=tk.DISABLED)
+        
         # Display file content in the text widget
         self.text_widget.delete("1.0", tk.END)
         self.text_widget.insert(tk.END, content)
-        # Always perform highlighting regardless of the content
-        self.highlight_plantuml()
+        # Execute syntax highlighting (without affecting the button state)
+        self.highlight_plant_uml_activity()
 
-    def highlight_plantuml(self):
-        """Hervorhebung der Schlüsselwörter und Bedingungen (in blau) im Text-Widget."""
-        # Entferne vorhandene Hervorhebungen
+    def highlight_plant_uml_activity(self):
+        """Executes syntax highlighting **only** if a valid PlantUML activity diagram is present."""
+        content = self.text_widget.get("1.0", tk.END)
+        if not is_valid_plantuml_activitydiagram_string(content):
+            # If the content is not valid, existing tags are removed.
+            self.text_widget.tag_remove("keyword", "1.0", tk.END)
+            self.text_widget.tag_remove("condition", "1.0", tk.END)
+            return
+
+        # Remove existing tags first
         self.text_widget.tag_remove("keyword", "1.0", tk.END)
         self.text_widget.tag_remove("condition", "1.0", tk.END)
         
-        # Hervorhebung von Schlüsselwörtern
+        # Highlight keywords
         for pattern in ["if", "then", "else", "endif", "start", "stop", "@startuml", "@enduml"]:
             start_idx = "1.0"
             while True:
@@ -166,34 +184,28 @@ class FileSelectorApp:
                 self.text_widget.tag_add("keyword", pos, end_pos)
                 start_idx = end_pos
         
-        # Hervorhebung von Bedingungen in Klammern direkt nach "if"
-        content = self.text_widget.get("1.0", tk.END)
+        # Highlight conditions that are in parentheses directly following "if"
         start_search = 0
         while True:
-            # Suche nach einer "if"-Anweisung im gesamten Text
             if_idx = content.find("if", start_search)
             if if_idx == -1:
                 break
             
-            # Suche nach der öffnenden Klammer direkt nach "if"
             open_paren_idx = content.find("(", if_idx)
             if open_paren_idx == -1:
                 start_search = if_idx + 2
                 continue
             
-            # Sicherstellen, dass zwischen "if" und "(" nur Leerzeichen stehen
             between_text = content[if_idx+2:open_paren_idx]
             if between_text.strip() != "":
                 start_search = open_paren_idx + 1
                 continue
             
-            # Suche nach der schließenden Klammer
             close_paren_idx = content.find(")", open_paren_idx)
             if close_paren_idx == -1:
                 start_search = open_paren_idx + 1
                 continue
             
-            # Bestimme die Textindizes für den Bedingungstext (ohne Klammern)
             start_condition = f"1.0+{open_paren_idx+1}c"
             end_condition = f"1.0+{close_paren_idx}c"
             self.text_widget.tag_add("condition", start_condition, end_condition)
@@ -208,15 +220,15 @@ class FileSelectorApp:
             return
 
         try:
-            # Parse PlantUML code directly as a string
-            nodes, edges = parse_plantuml(plantuml_code)
+            # Parse PlantUML code into nodes and edges
+            nodes, edges = parse_plantuml_activity(plantuml_code)
             # Generate XML for draw.io
             drawio_xml = create_drawio_xml(nodes, edges)
 
-            # Determine default file name
+            # Determine default filename
             default_filename = f"{self.current_file}.drawio" if self.current_file else "untitled.drawio"
 
-            # Show save dialog to select location for the draw.io file
+            # Show save dialog to choose storage location
             save_path = filedialog.asksaveasfilename(
                 title="Save Draw.io File",
                 initialfile=default_filename,
@@ -235,26 +247,26 @@ class FileSelectorApp:
 
 def main():
     root = tk.Tk()
-    # Anwendungsname in der Menüleiste ändern (wichtig vor der weiteren Konfiguration)
+    # Set application title in the menu bar
     root.tk.call('tk', 'appname', 'plantuml2drawio')
     
     import sys
-    # Setze das Icon plattformübergreifend:
+    # Set icon in a cross-platform manner
     if sys.platform.startswith('win'):
         try:
             root.iconbitmap("p2dapp_icon.ico")
         except Exception as e:
-            print("Fehler beim Laden des Icons unter Windows:", e)
+            print("Error loading icon on Windows:", e)
     else:
         try:
             icon = tk.PhotoImage(file="p2dapp_icon.png")
             root.iconphoto(False, icon)
         except Exception as e:
-            print("Fehler beim Laden des Icons unter macOS/Linux:", e)
+            print("Error loading icon on macOS/Linux:", e)
 
     app = FileSelectorApp(root)
     
-    # Fenster in den Vordergrund bringen und Fokus erzwingen
+    # Bring window to the front and force focus
     root.lift()
     root.attributes("-topmost", True)
     root.after(100, lambda: root.focus_force())
