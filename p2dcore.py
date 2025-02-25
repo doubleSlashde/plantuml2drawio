@@ -466,45 +466,73 @@ def layout_activitydiagram(nodes, edges, vertical_spacing=80, horizontal_spacing
             node.x = (start_x + x_offset) + (col - 1) * horizontal_spacing - node.width / 2
             node.y = start_y + order_mapping.get(node.id, 0) * vertical_spacing
 
+def process_file(input_file, output_file, output_json=False):
+    """
+    Verarbeitet eine PlantUML-Datei und erstellt die entsprechende Ausgabedatei.
+    
+    Args:
+        input_file: Pfad zur Eingabedatei
+        output_file: Pfad zur Ausgabedatei
+        output_json: Bei True wird JSON ausgegeben, sonst XML
+    
+    Returns:
+        True bei Erfolg, False bei Fehler
+    """
+    try:
+        with open(input_file, "r", encoding="utf-8") as f:
+            plantuml_content = f.read()
+
+        if not is_valid_plantuml_activitydiagram_string(plantuml_content):
+            print(f"Error: The file '{input_file}' does not contain a valid PlantUML activity diagram.")
+            return False
+
+        nodes, edges = parse_plantuml_activity(plantuml_content)
+        layout_activitydiagram(nodes, edges)
+
+        output_format = "JSON" if output_json else "Draw.io XML"
+        
+        try:
+            with open(output_file, "w", encoding="utf-8") as f:
+                if output_json:
+                    json_output = create_json(nodes, edges)
+                    f.write(json_output)
+                else:
+                    xml_content = create_drawio_xml(nodes, edges)
+                    f.write(xml_content)
+            print(f"{output_format} file successfully created: {output_file}")
+            return True
+        except IOError as e:
+            print(f"Error writing output file '{output_file}': {e}")
+            return False
+            
+    except IOError as e:
+        print(f"Error reading input file '{input_file}': {e}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error during processing: {e}")
+        return False
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Konvertiert ein PlantUML-Aktivitätsdiagramm in eine draw.io XML Datei oder in eine JSON Darstellung der Knoten und Kanten."
+        description="Converts a PlantUML activity diagram to a draw.io XML file or a JSON representation of nodes and edges."
     )
-    parser.add_argument("--input", required=True, help="Eingabe PlantUML Datei")
-    parser.add_argument("--output", help="Ausgabe Datei (draw.io XML oder JSON)")
-    parser.add_argument("--json", action="store_true", help="Gibt die Knoten und Kanten als JSON aus statt als XML.")
+    parser.add_argument("--input", required=True, help="Input PlantUML file")
+    parser.add_argument("--output", help="Output file (draw.io XML or JSON)")
+    parser.add_argument("--json", action="store_true", help="Output nodes and edges as JSON instead of XML.")
     args = parser.parse_args()
 
+    # Bestimme den Ausgabedateinamen, falls nicht angegeben
     input_file = args.input
     output_file = args.output
     if output_file is None:
         base, _ = os.path.splitext(input_file)
-        if args.json:
-            output_file = base + ".json"
-        else:
-            output_file = base + ".drawio"
+        extension = ".json" if args.json else ".drawio"
+        output_file = base + extension
 
-    with open(input_file, "r", encoding="utf-8") as f:
-        plantuml_content = f.read()
-
-    if not is_valid_plantuml_activitydiagram_string(plantuml_content):
-        print("Error: Die Datei ist kein gültiges PlantUML Aktivitätsdiagramm.")
+    # Verarbeite die Datei
+    success = process_file(input_file, output_file, args.json)
+    if not success:
         sys.exit(1)
-
-    nodes, edges = parse_plantuml_activity(plantuml_content)
-    layout_activitydiagram(nodes, edges)
-
-    if args.json:
-        json_output = create_json(nodes, edges)
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(json_output)
-        print("JSON Datei erstellt:", output_file)
-    else:
-        xml_content = create_drawio_xml(nodes, edges)
-        with open(output_file, "w", encoding="utf-8") as f:
-            f.write(xml_content)
-        print("Draw.io Datei erstellt:", output_file)
 
 if __name__ == "__main__":
     main()
