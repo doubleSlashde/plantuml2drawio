@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import os
 import tempfile
-from p2dcore import parse_plantuml_activity, create_drawio_xml, is_valid_plantuml_activitydiagram_string
+from p2dcore import parse_plantuml_activity, create_drawio_xml, is_valid_plantuml_activitydiagram_string, layout_activitydiagram
 import tkinter.font as tkFont
 
 class FileSelectorApp:
@@ -30,7 +30,7 @@ class FileSelectorApp:
         # Row 1: Message label (for hints and error messages)
         self.message_label = tk.Label(
             self.root, 
-            text="",
+            text="Please select a PlantUML file to convert.",
             anchor="w",
             font=("Arial", 12)
         )
@@ -58,7 +58,7 @@ class FileSelectorApp:
         
         # Bind syntax highlighting (changes here only affect highlighting; 
         # the button remains unaffected)
-        self.text_widget.bind("<KeyRelease>", lambda event: self.highlight_plant_uml_activity())
+        self.text_widget.bind("<KeyRelease>", lambda event: self.update_text_and_button_state())
 
         # Vertical scrollbar for the text widget
         self.scrollbar = tk.Scrollbar(self.main_frame, orient="vertical", command=self.text_widget.yview)
@@ -110,17 +110,22 @@ class FileSelectorApp:
         
         # "File" menu
         file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Open File", command=self.open_file)
+        file_menu.add_command(label="Open File", command=self.open_file, accelerator="Ctrl+O")
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
+        file_menu.add_command(label="Exit", command=self.root.quit, accelerator="Alt+F4")
         menubar.add_cascade(label="File", menu=file_menu)
         
         # "Help" menu
         help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="About", command=self.show_about)
+        help_menu.add_command(label="About", command=self.show_about, accelerator="F1")
         menubar.add_cascade(label="Help", menu=help_menu)
         
         self.root.config(menu=menubar)
+        
+        # Bind keyboard shortcuts
+        self.root.bind("<Control-o>", lambda event: self.open_file())
+        self.root.bind("<F1>", lambda event: self.show_about())
+        self.root.bind("<Control-s>", lambda event: self.convert_to_drawio())
     
     def show_about(self):
         """Displays an information dialog about the application."""
@@ -138,26 +143,35 @@ class FileSelectorApp:
             try:
                 with open(file_path, "r", encoding="utf-8") as file:
                     content = file.read()
-                if not is_valid_plantuml_activitydiagram_string(content):
-                    self.message_label.config(text="Invalid PlantUML activity diagram. Conversion disabled.")
-                    self.convert_button.config(state=tk.DISABLED)
-                else:
-                    self.message_label.config(text="File loaded successfully.")
-                    self.convert_button.config(state=tk.NORMAL)
+                # Display file content in the text widget
+                self.text_widget.delete("1.0", tk.END)
+                self.text_widget.insert(tk.END, content)
+                # Update button state and highlighting
+                self.update_text_and_button_state()
             except Exception as e:
-                content = ""
                 self.message_label.config(text=f"Error loading file: {e}")
                 self.convert_button.config(state=tk.DISABLED)
         else:
             self.filename_label.config(text="No file selected.")
-            self.message_label.config(text="No file selected.")
-            content = ""
+            self.message_label.config(text="Please select a PlantUML file to convert.")
+            # Reset text widget
+            self.text_widget.delete("1.0", tk.END)
             self.convert_button.config(state=tk.DISABLED)
+
+    def update_text_and_button_state(self):
+        """Updates syntax highlighting and button state based on current text content."""
+        content = self.text_widget.get("1.0", tk.END)
+        is_valid = is_valid_plantuml_activitydiagram_string(content)
         
-        # Display file content in the text widget
-        self.text_widget.delete("1.0", tk.END)
-        self.text_widget.insert(tk.END, content)
-        # Execute syntax highlighting (without affecting the button state)
+        # Update Convert button state
+        if is_valid:
+            self.convert_button.config(state=tk.NORMAL)
+            self.message_label.config(text="Valid PlantUML activity diagram.")
+        else:
+            self.convert_button.config(state=tk.DISABLED)
+            self.message_label.config(text="Invalid PlantUML activity diagram. Conversion disabled.")
+        
+        # Apply syntax highlighting
         self.highlight_plant_uml_activity()
 
     def highlight_plant_uml_activity(self):
@@ -222,6 +236,8 @@ class FileSelectorApp:
         try:
             # Parse PlantUML code into nodes and edges
             nodes, edges = parse_plantuml_activity(plantuml_code)
+            # Optimize diagram layout
+            drawio_xml = layout_activitydiagram(nodes, edges)
             # Generate XML for draw.io
             drawio_xml = create_drawio_xml(nodes, edges)
 
