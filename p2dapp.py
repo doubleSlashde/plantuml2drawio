@@ -16,7 +16,7 @@ class FileSelectorApp:
 
         # Configure main grid
         self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(2, weight=1)  # Row 2 (main frame) is dynamically expandable
+        self.root.rowconfigure(3, weight=1)  # Row 3 (main frame) is now dynamically expandable
 
         # Row 0: Filename label
         self.filename_label = tk.Label(
@@ -27,18 +27,52 @@ class FileSelectorApp:
         )
         self.filename_label.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 5))
 
-        # Row 1: Message label (for hints and error messages)
+        # Row 1: Horizontal button frame (moved up from Row 3)
+        self.button_frame = tk.Frame(self.root)
+        self.button_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(5, 5))
+        self.button_frame.columnconfigure(0, weight=1)
+        self.button_frame.columnconfigure(2, weight=1)
+
+        # "Open File" button on the left
+        self.file_button = tk.Button(
+            self.button_frame, 
+            text="Open File", 
+            command=self.open_file,
+            font=("Arial", 12),
+            padx=15,
+            pady=8
+        )
+        self.file_button.grid(row=0, column=0, sticky="w")
+
+        # Spacer in the middle
+        spacer = tk.Label(self.button_frame, text="")
+        spacer.grid(row=0, column=1, sticky="ew")
+
+        # "Convert to Draw.io" button on the right; 
+        # initially disabled
+        self.convert_button = tk.Button(
+            self.button_frame, 
+            text="Convert to Draw.io", 
+            command=self.convert_to_drawio,
+            state=tk.DISABLED,
+            font=("Arial", 12),
+            padx=15,
+            pady=8
+        )
+        self.convert_button.grid(row=0, column=2, sticky="e")
+
+        # Row 2: Message label (moved down from Row 1)
         self.message_label = tk.Label(
             self.root, 
             text="Please select a PlantUML file to convert.",
             anchor="w",
             font=("Arial", 12)
         )
-        self.message_label.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 5))
+        self.message_label.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 5))
 
-        # Row 2: Main frame for the text widget and scrollbar (ensures responsive design)
+        # Row 3: Main frame for the text widget (moved down from Row 2)
         self.main_frame = tk.Frame(self.root)
-        self.main_frame.grid(row=2, column=0, sticky="nsew", padx=10, pady=5)
+        self.main_frame.grid(row=3, column=0, sticky="nsew", padx=10, pady=5)
         self.main_frame.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(0, weight=1)
 
@@ -64,30 +98,6 @@ class FileSelectorApp:
         self.scrollbar = tk.Scrollbar(self.main_frame, orient="vertical", command=self.text_widget.yview)
         self.scrollbar.grid(row=0, column=1, sticky="ns")
         self.text_widget.configure(yscrollcommand=self.scrollbar.set)
-
-        # Row 3: Horizontal button frame
-        self.button_frame = tk.Frame(self.root)
-        self.button_frame.grid(row=3, column=0, sticky="ew", padx=10, pady=(5, 5))
-        self.button_frame.columnconfigure(0, weight=1)
-        self.button_frame.columnconfigure(2, weight=1)
-
-        # "Open File" button on the left
-        self.file_button = tk.Button(self.button_frame, text="Open File", command=self.open_file)
-        self.file_button.grid(row=0, column=0, sticky="w")
-
-        # Spacer in the middle
-        spacer = tk.Label(self.button_frame, text="")
-        spacer.grid(row=0, column=1, sticky="ew")
-
-        # "Convert to Draw.io" button on the right; 
-        # initially disabled
-        self.convert_button = tk.Button(
-            self.button_frame, 
-            text="Convert to Draw.io", 
-            command=self.convert_to_drawio,
-            state=tk.DISABLED
-        )
-        self.convert_button.grid(row=0, column=2, sticky="e")
 
         # Row 4: Footer with copyright notice
         self.footer = tk.Frame(self.root)
