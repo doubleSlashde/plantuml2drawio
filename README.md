@@ -80,9 +80,12 @@ This project is licensed under the MIT License. Please see the [LICENSE](LICENSE
    pyinstaller --onefile --noconsole --icon=p2dapp_icon.icns --name plantuml2drawio p2dapp.py
    ```
    and for Windows and Linux executables:
-   ```bash
+   ```powershell
    pyinstaller --onefile --noconsole --icon=p2dapp_icon.ico --name plantuml2drawio p2dapp.py
    ```
+New-SelfSignedCertificate -Type CodeSigning -Subject "CN=YourCompany" -KeyUsage DigitalSignature -CertStoreLocation Cert:\CurrentUser\My
+signtool sign /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 /a "dist\script.exe"
+
    
    - The `--onefile` flag bundles all dependencies into a single executable.
    - The `--noconsole` flag prevents the console window from appearing, which is ideal for GUI applications built with tkinter. (Omit this flag if you need the console for debugging.)
