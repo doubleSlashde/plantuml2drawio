@@ -1,7 +1,6 @@
 Remove-Item -Path "__pycache__" -Recurse -Force
 Remove-Item -Path "build" -Recurse -Force
 Remove-Item -Path "dist" -Recurse -Force
-
 pyinstaller --clean --noconfirm p2dapp.py
 pyinstaller --strip --noupx p2dapp.py
 pyinstaller --onefile --noconsole --icon=p2dapp_icon.ico --name plantuml2drawio p2dapp.py

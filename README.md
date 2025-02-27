@@ -79,13 +79,22 @@ This project is licensed under the MIT License. Please see the [LICENSE](LICENSE
    ```bash
    pyinstaller --onefile --noconsole --icon=p2dapp_icon.icns --name plantuml2drawio p2dapp.py
    ```
-   and for Windows and Linux executables:
+   and for Windows executables:
    ```powershell
-   pyinstaller --onefile --noconsole --icon=p2dapp_icon.ico --name plantuml2drawio p2dapp.py
+   Remove-Item -Path "__pycache__" -Recurse -Force
+   Remove-Item -Path "build" -Recurse -Force
+   Remove-Item -Path "dist" -Recurse -Force
+   pyinstaller --clean --noconfirm p2dapp.py
+   pyinstaller --strip --noupx p2dapp.py
+   pyinstaller --onefile --noconsole --icon=p2dapp_icon.ico p2dapp.py
    ```
-New-SelfSignedCertificate -Type CodeSigning -Subject "CN=YourCompany" -KeyUsage DigitalSignature -CertStoreLocation Cert:\CurrentUser\My
-signtool sign /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 /a "dist\script.exe"
-
+   Download and Install Signtool from https://developer.microsoft.com/de-de/windows/downloads/windows-sdk/
+   
+   Sign the executable:
+   ```powershell
+      New-SelfSignedCertificate -Type CodeSigning -Subject "CN=YourCompany" -KeyUsage DigitalSignature -CertStoreLocation "Cert:\CurrentUser\My"
+      signtool sign /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 /a "dist\p2dapp.exe"
+   ```
    
    - The `--onefile` flag bundles all dependencies into a single executable.
    - The `--noconsole` flag prevents the console window from appearing, which is ideal for GUI applications built with tkinter. (Omit this flag if you need the console for debugging.)
