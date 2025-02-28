@@ -3,6 +3,9 @@ import customtkinter as ctk
 from tkinter import filedialog
 import tkinter as tk
 from p2dcore import parse_plantuml_activity, create_drawio_xml, is_valid_plantuml_activitydiagram_string, layout_activitydiagram
+from pygments import lex
+from pygments.lexers import get_lexer_by_name
+from pygments.token import Token
 
 # Versionsnummer als Konstante
 VERSION = "1.0.8"
@@ -94,6 +97,19 @@ class FileSelectorApp:
         )
         self.text_widget.grid(row=0, column=0, sticky="nsew")
         
+        # Farbdefinitionen für das Syntax-Highlighting
+        # Zugriff auf das zugrundeliegende Tkinter-Text-Widget
+        self.tk_text = self.text_widget._textbox
+        # Setze alle Farben zunächst auf Dunkelgrau (statt Schwarz) für den normalen Text
+        self.tk_text.configure(foreground="#444444")  # Dunkelgrau als Standardfarbe
+        self.tk_text.tag_configure("keyword", foreground="#FF00FF")  # Magenta für Schlüsselwörter
+        self.tk_text.tag_configure("string", foreground="#444444")   # Dunkelgrau für Strings
+        self.tk_text.tag_configure("comment", foreground="#444444", font=("Courier New", 16, "italic"))  # Dunkelgrau für Kommentare, aber kursiv
+        self.tk_text.tag_configure("operator", foreground="#444444") # Dunkelgrau für die meisten Operatoren
+        self.tk_text.tag_configure("name", foreground="#444444")     # Dunkelgrau für Namen
+        self.tk_text.tag_configure("arrow", foreground="#444444")    # Dunkelgrau für Pfeile
+        self.tk_text.tag_configure("bracket", foreground="#0000FF")  # Starkes Blau für Klammern
+        
         # Initiales Update
         self.text_widget.bind("<KeyRelease>", lambda event: self.update_text_and_button_state())
         
@@ -154,6 +170,8 @@ class FileSelectorApp:
                 # Display file content in the text widget
                 self.text_widget.delete("1.0", "end")
                 self.text_widget.insert("end", content)
+                # Syntax-Highlighting anwenden
+                self.apply_syntax_highlighting()
                 # Update button state
                 self.update_text_and_button_state()
             except Exception as e:
@@ -171,6 +189,9 @@ class FileSelectorApp:
         content = self.text_widget.get("1.0", "end")
         is_valid = is_valid_plantuml_activitydiagram_string(content)
         
+        # Apply syntax highlighting
+        self.apply_syntax_highlighting()
+        
         # Update Convert button state
         if is_valid:
             self.convert_button.configure(state="normal")
@@ -178,6 +199,101 @@ class FileSelectorApp:
         else:
             self.convert_button.configure(state="disabled")
             self.message_label.configure(text="Invalid PlantUML activity diagram. Conversion disabled.")
+
+    def apply_syntax_highlighting(self):
+        """Wendet Syntax-Highlighting auf den PlantUML-Code im Textfeld an."""
+        # Entferne bestehende Tags
+        for tag in ["keyword", "string", "comment", "operator", "name", "arrow", "bracket"]:
+            self.tk_text.tag_remove(tag, "1.0", "end")
+        
+        # Wichtige Schlüsselwörter, die in Magenta hervorgehoben werden sollen
+        keywords = [
+            # Basis-Keywords
+            "@startuml", "@enduml", "start", "stop", "if", "then", "else", "endif",
+            "while", "repeat", "fork", "end fork",
+            # Erweiterte Keywords
+            "partition", "end partition", "backward", "forward", "detach",
+            "note", "end note", "split", "end split"
+        ]
+
+        # 1. Kommentare hervorheben (sie sollen Vorrang vor allem anderen haben)
+        start_idx = "1.0"
+        while True:
+            pos = self.tk_text.search("'", start_idx, "end")
+            if not pos:
+                break
+            line, col = map(int, pos.split('.'))
+            
+            # Suche das Ende der Zeile
+            lineend = self.tk_text.index(f"{line+1}.0")
+            if not lineend:
+                lineend = "end"
+            
+            # Markiere die gesamte Zeile ab dem Kommentarzeichen
+            self.tk_text.tag_add("comment", pos, lineend)
+            start_idx = lineend
+        
+        # 2. Klammern hervorheben
+        bracket_patterns = ["(", ")", "[", "]", "{", "}", "<", ">"]
+        for pattern in bracket_patterns:
+            start_idx = "1.0"
+            while True:
+                pos = self.tk_text.search(pattern, start_idx, "end")
+                if not pos:
+                    break
+                end_pos = f"{pos}+1c"  # Ein Zeichen vorwärts
+                self.tk_text.tag_add("bracket", pos, end_pos)
+                start_idx = end_pos
+
+        # 3. PlantUML-spezifische Pfeile hervorheben
+        arrow_patterns = ["->", "-->", "->>", "-->", "..>", "<-", "<--", "<<-", "<--", "<.." ]
+        for pattern in arrow_patterns:
+            start_idx = "1.0"
+            while True:
+                pos = self.tk_text.search(pattern, start_idx, "end")
+                if not pos:
+                    break
+                end_pos = f"{pos}+{len(pattern)}c"  # Länge des Musters vorwärts
+                self.tk_text.tag_add("arrow", pos, end_pos)
+                start_idx = end_pos
+        
+        # 4. Schlüsselwörter hervorheben - dabei Groß-/Kleinschreibung ignorieren
+        # Für jedes Schlüsselwort in unserer Liste
+        for keyword in keywords:
+            start_idx = "1.0"
+            while True:
+                # Suche nach dem Schlüsselwort, ignoriere Groß-/Kleinschreibung
+                pos = self.tk_text.search(keyword, start_idx, "end", nocase=True)
+                if not pos:
+                    break
+                    
+                # Berechne End-Position
+                end_pos = f"{pos}+{len(keyword)}c"
+                
+                # Prüfe Wortgrenzen - das Zeichen vor und nach dem Schlüsselwort sollte kein Buchstabe/Zahl sein
+                is_valid_keyword = True
+                
+                # Prüfe Zeichen vor dem Schlüsselwort, falls nicht am Anfang
+                if self.tk_text.compare(pos, ">", "1.0"):
+                    before_pos = f"{pos}-1c"
+                    char_before = self.tk_text.get(before_pos, pos)
+                    if char_before.isalnum() or char_before == '_':
+                        is_valid_keyword = False
+                
+                # Prüfe Zeichen nach dem Schlüsselwort, falls nicht am Ende
+                if is_valid_keyword and self.tk_text.compare(end_pos, "<", "end"):
+                    char_after = self.tk_text.get(end_pos, f"{end_pos}+1c")
+                    if char_after.isalnum() or char_after == '_':
+                        is_valid_keyword = False
+                
+                # Wenn es ein gültiges Schlüsselwort ist, markiere es
+                if is_valid_keyword:
+                    # Hole den tatsächlichen Text, um die korrekte Groß-/Kleinschreibung beizubehalten
+                    actual_text = self.tk_text.get(pos, end_pos)
+                    self.tk_text.tag_add("keyword", pos, end_pos)
+                
+                # Setze Startindex für nächste Suche
+                start_idx = end_pos
 
     def convert_to_drawio(self):
         # Hole den Inhalt des Text-Widgets (PlantUML-Code)
