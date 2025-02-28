@@ -109,6 +109,14 @@ class FileSelectorApp:
         self.tk_text.tag_configure("name", foreground="#444444")     # Dunkelgrau für Namen
         self.tk_text.tag_configure("arrow", foreground="#444444")    # Dunkelgrau für Pfeile
         self.tk_text.tag_configure("bracket", foreground="#0000FF")  # Starkes Blau für Klammern
+        self.tk_text.tag_configure("condition", foreground="#0000FF")  # Blau für Bedingungen innerhalb von Klammern
+        self.tk_text.tag_configure("activity_content", foreground="#444444")  # Dunkelgrau für Text in Aktivitäten
+        
+        # Prioritäten festlegen: Je niedriger die Zahl, desto höher die Priorität
+        self.tk_text.tag_raise("comment")        # Höchste Priorität für Kommentare
+        self.tk_text.tag_raise("activity_content", "keyword")  # Aktivitätstext hat Vorrang vor Schlüsselwörtern
+        self.tk_text.tag_raise("activity_content", "bracket")  # Aktivitätstext hat Vorrang vor Klammern
+        self.tk_text.tag_raise("activity_content", "condition")  # Aktivitätstext hat Vorrang vor Bedingungen
         
         # Initiales Update
         self.text_widget.bind("<KeyRelease>", lambda event: self.update_text_and_button_state())
@@ -202,95 +210,115 @@ class FileSelectorApp:
 
     def apply_syntax_highlighting(self):
         """Wendet Syntax-Highlighting auf den PlantUML-Code im Textfeld an."""
-        # Entferne bestehende Tags
-        for tag in ["keyword", "string", "comment", "operator", "name", "arrow", "bracket"]:
+        # 1. Entferne zunächst alle bestehenden Tags
+        for tag in ["keyword", "string", "comment", "operator", "name", "arrow", "bracket", "condition", "activity_content"]:
             self.tk_text.tag_remove(tag, "1.0", "end")
         
-        # Wichtige Schlüsselwörter, die in Magenta hervorgehoben werden sollen
-        keywords = [
-            # Basis-Keywords
-            "@startuml", "@enduml", "start", "stop", "if", "then", "else", "endif",
-            "while", "repeat", "fork", "end fork",
-            # Erweiterte Keywords
-            "partition", "end partition", "backward", "forward", "detach",
-            "note", "end note", "split", "end split"
-        ]
-
-        # 1. Kommentare hervorheben (sie sollen Vorrang vor allem anderen haben)
+        # 2. Setze die Standardfarbe für den gesamten Text auf Dunkelgrau
+        self.tk_text.configure(foreground="#444444")  # Dunkelgrau als Standardfarbe
+        
+        # EINFACHSTER ANSATZ:
+        # 1. Schritt: Markiere alle Kommentare
         start_idx = "1.0"
         while True:
-            pos = self.tk_text.search("'", start_idx, "end")
+            pos = self.tk_text.search("'", start_idx, "end", regexp=False)
             if not pos:
                 break
-            line, col = map(int, pos.split('.'))
             
-            # Suche das Ende der Zeile
-            lineend = self.tk_text.index(f"{line+1}.0")
-            if not lineend:
-                lineend = "end"
-            
-            # Markiere die gesamte Zeile ab dem Kommentarzeichen
+            # Markiere den Rest der Zeile als Kommentar
+            lineend = self.tk_text.index(f"{pos} lineend")
             self.tk_text.tag_add("comment", pos, lineend)
-            start_idx = lineend
+            
+            # Setze Startindex für nächste Suche
+            start_idx = f"{lineend}+1c"
         
-        # 2. Klammern hervorheben
-        bracket_patterns = ["(", ")", "[", "]", "{", "}", "<", ">"]
-        for pattern in bracket_patterns:
+        # 2. Schritt: Markiere alle Aktivitäten (Text in eckigen Klammern)
+        start_idx = "1.0"
+        while True:
+            open_pos = self.tk_text.search("[", start_idx, "end", regexp=False)
+            if not open_pos:
+                break
+                
+            close_pos = self.tk_text.search("]", f"{open_pos}+1c", "end", regexp=False)
+            if not close_pos:
+                break
+            
+            # Markiere die Klammern selbst
+            self.tk_text.tag_add("bracket", open_pos, f"{open_pos}+1c")
+            self.tk_text.tag_add("bracket", close_pos, f"{close_pos}+1c")
+            
+            # Markiere den Inhalt als activity_content
+            content_start = f"{open_pos}+1c"
+            self.tk_text.tag_add("activity_content", content_start, close_pos)
+            
+            # Setze Startindex für nächste Suche
+            start_idx = f"{close_pos}+1c"
+        
+        # 3. Schritt: Markiere Schlüsselwörter, aber nur wenn sie nicht bereits als activity_content markiert sind
+        keywords = [
+            "@startuml", "@enduml", "start", "stop", "if", "then", "else", "endif",
+            "while", "repeat", "fork", "end fork", "partition", "end partition", 
+            "backward", "forward", "detach", "note", "end note", "split", "end split"
+        ]
+        
+        for keyword in keywords:
             start_idx = "1.0"
             while True:
-                pos = self.tk_text.search(pattern, start_idx, "end")
+                # Suche case-insensitive
+                pos = self.tk_text.search(keyword, start_idx, "end", nocase=True)
                 if not pos:
                     break
-                end_pos = f"{pos}+1c"  # Ein Zeichen vorwärts
-                self.tk_text.tag_add("bracket", pos, end_pos)
+                
+                end_pos = f"{pos}+{len(keyword)}c"
+                
+                # Prüfe ob diese Position bereits als activity_content markiert ist
+                tags_here = self.tk_text.tag_names(pos)
+                if "activity_content" not in tags_here:
+                    self.tk_text.tag_add("keyword", pos, end_pos)
+                
+                # Setze Startindex für nächste Suche
                 start_idx = end_pos
-
-        # 3. PlantUML-spezifische Pfeile hervorheben
+        
+        # 4. Schritt: Markiere runde Klammern und ihren Inhalt
+        start_idx = "1.0"
+        while True:
+            open_pos = self.tk_text.search("(", start_idx, "end", regexp=False)
+            if not open_pos:
+                break
+            
+            close_pos = self.tk_text.search(")", f"{open_pos}+1c", "end", regexp=False)
+            if not close_pos:
+                break
+            
+            # Prüfe ob innerhalb einer Aktivität
+            tags_open = self.tk_text.tag_names(open_pos)
+            if "activity_content" not in tags_open:
+                # Markiere die Klammern
+                self.tk_text.tag_add("bracket", open_pos, f"{open_pos}+1c")
+                self.tk_text.tag_add("bracket", close_pos, f"{close_pos}+1c")
+                
+                # Markiere den Inhalt
+                content_start = f"{open_pos}+1c"
+                self.tk_text.tag_add("condition", content_start, close_pos)
+            
+            # Setze Startindex für nächste Suche
+            start_idx = f"{close_pos}+1c"
+        
+        # 5. Schritt: Markiere Pfeile
         arrow_patterns = ["->", "-->", "->>", "-->", "..>", "<-", "<--", "<<-", "<--", "<.." ]
         for pattern in arrow_patterns:
             start_idx = "1.0"
             while True:
-                pos = self.tk_text.search(pattern, start_idx, "end")
+                pos = self.tk_text.search(pattern, start_idx, "end", regexp=False)
                 if not pos:
                     break
-                end_pos = f"{pos}+{len(pattern)}c"  # Länge des Musters vorwärts
-                self.tk_text.tag_add("arrow", pos, end_pos)
-                start_idx = end_pos
-        
-        # 4. Schlüsselwörter hervorheben - dabei Groß-/Kleinschreibung ignorieren
-        # Für jedes Schlüsselwort in unserer Liste
-        for keyword in keywords:
-            start_idx = "1.0"
-            while True:
-                # Suche nach dem Schlüsselwort, ignoriere Groß-/Kleinschreibung
-                pos = self.tk_text.search(keyword, start_idx, "end", nocase=True)
-                if not pos:
-                    break
-                    
-                # Berechne End-Position
-                end_pos = f"{pos}+{len(keyword)}c"
                 
-                # Prüfe Wortgrenzen - das Zeichen vor und nach dem Schlüsselwort sollte kein Buchstabe/Zahl sein
-                is_valid_keyword = True
+                end_pos = f"{pos}+{len(pattern)}c"
                 
-                # Prüfe Zeichen vor dem Schlüsselwort, falls nicht am Anfang
-                if self.tk_text.compare(pos, ">", "1.0"):
-                    before_pos = f"{pos}-1c"
-                    char_before = self.tk_text.get(before_pos, pos)
-                    if char_before.isalnum() or char_before == '_':
-                        is_valid_keyword = False
-                
-                # Prüfe Zeichen nach dem Schlüsselwort, falls nicht am Ende
-                if is_valid_keyword and self.tk_text.compare(end_pos, "<", "end"):
-                    char_after = self.tk_text.get(end_pos, f"{end_pos}+1c")
-                    if char_after.isalnum() or char_after == '_':
-                        is_valid_keyword = False
-                
-                # Wenn es ein gültiges Schlüsselwort ist, markiere es
-                if is_valid_keyword:
-                    # Hole den tatsächlichen Text, um die korrekte Groß-/Kleinschreibung beizubehalten
-                    actual_text = self.tk_text.get(pos, end_pos)
-                    self.tk_text.tag_add("keyword", pos, end_pos)
+                # Prüfe ob innerhalb einer Aktivität
+                tags_here = self.tk_text.tag_names(pos)
+                if "activity_content" not in tags_here:
+                    self.tk_text.tag_add("arrow", pos, end_pos)
                 
                 # Setze Startindex für nächste Suche
                 start_idx = end_pos
