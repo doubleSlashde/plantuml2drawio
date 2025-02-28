@@ -1,4 +1,4 @@
-@startuml
+@startuml UseCase
 actor User
 rectangle "Login System" {
     usecase "Enter Credentials" as UC1
