@@ -1,11 +1,9 @@
+#!/usr/bin/env python3
 import os
 import customtkinter as ctk
 from tkinter import filedialog
 import tkinter as tk
 from p2dcore import parse_plantuml_activity, create_drawio_xml, is_valid_plantuml_activitydiagram_string, layout_activitydiagram
-from pygments import lex
-from pygments.lexers import get_lexer_by_name
-from pygments.token import Token
 
 # Versionsnummer als Konstante
 VERSION = "1.0.8"

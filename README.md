@@ -85,18 +85,13 @@ This project is licensed under the MIT License. Please see the [LICENSE](LICENSE
    Navigate to the directory containing the 'p2dapp.py' file and run for MacOS executable:
 
    ```bash
-   pyinstaller --onefile --noconsole --icon=p2dapp_icon.icns --name plantuml2drawio p2dapp.py
+   pyinstaller --onefile --noconsole --icon=p2dapp_icon.icns p2dapp.py
    ```
 
    and for Windows executables:
 
    ```powershell
-   Remove-Item -Path "__pycache__" -Recurse -Force
-   Remove-Item -Path "build" -Recurse -Force
-   Remove-Item -Path "dist" -Recurse -Force
-   pyinstaller --clean --noconfirm p2dapp.py
-   pyinstaller --strip --noupx p2dapp.py
-   pyinstaller --onefile --noconsole --icon=p2dapp_icon.ico p2dapp.py
+      .\build_exe.bat
    ```
 
    - The `--onefile` flag bundles all dependencies into a single executable.
@@ -108,7 +103,7 @@ This project is licensed under the MIT License. Please see the [LICENSE](LICENSE
 
    ```powershell
    New-SelfSignedCertificate -Type CodeSigning -Subject "CN=YourCompany" -KeyUsage DigitalSignature -CertStoreLocation "Cert:\CurrentUser\My"
-   signtool sign /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 /a "dist\p2dapp.exe"
+   signtool sign /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 /a "dist\p2dapp_win.exe"
    ```
 
 3. **Verifying the Build**  
