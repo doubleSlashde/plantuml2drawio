@@ -1,12 +1,11 @@
 import os
-import tempfile
 import customtkinter as ctk
 from tkinter import filedialog
 import tkinter as tk
 from p2dcore import parse_plantuml_activity, create_drawio_xml, is_valid_plantuml_activitydiagram_string, layout_activitydiagram
 
 # Versionsnummer als Konstante
-VERSION = "1.0.7"
+VERSION = "1.0.8"
 
 class FileSelectorApp:
     def __init__(self, root):
@@ -28,7 +27,7 @@ class FileSelectorApp:
         # Row 0: Filename label
         self.filename_label = ctk.CTkLabel(
             self.root, 
-            text="Keine Datei ausgewählt.",
+            text="No file selected.",
             anchor="w",
             font=("Arial", 14)
         )
@@ -43,7 +42,7 @@ class FileSelectorApp:
         # "Open File" button on the left
         self.file_button = ctk.CTkButton(
             self.button_frame, 
-            text="Datei öffnen", 
+            text="Open File", 
             command=self.open_file,
             font=("Arial", 14, "bold"),
             width=120,
@@ -61,7 +60,7 @@ class FileSelectorApp:
         # initially disabled
         self.convert_button = ctk.CTkButton(
             self.button_frame, 
-            text="Nach Draw.io konvertieren", 
+            text="Convert to Draw.io", 
             command=self.convert_to_drawio,
             state="disabled",
             font=("Arial", 14, "bold"),
@@ -75,7 +74,7 @@ class FileSelectorApp:
         # Row 2: Message label
         self.message_label = ctk.CTkLabel(
             self.root, 
-            text="Bitte wählen Sie eine PlantUML-Datei zum Konvertieren aus.",
+            text="Please select a PlantUML file to convert.",
             anchor="w",
             font=("Arial", 14)
         )
@@ -119,15 +118,15 @@ class FileSelectorApp:
         
         # "File" menu
         file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Datei öffnen", command=self.open_file, accelerator="Strg+O")
+        file_menu.add_command(label="Open File", command=self.open_file, accelerator="Ctrl+O")
         file_menu.add_separator()
-        file_menu.add_command(label="Beenden", command=self.root.quit, accelerator="Alt+F4")
-        menubar.add_cascade(label="Datei", menu=file_menu)
+        file_menu.add_command(label="Exit", command=self.root.quit, accelerator="Alt+F4")
+        menubar.add_cascade(label="File", menu=file_menu)
         
         # "Help" menu
         help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="Über", command=self.show_about, accelerator="F1")
-        menubar.add_cascade(label="Hilfe", menu=help_menu)
+        help_menu.add_command(label="About", command=self.show_about, accelerator="F1")
+        menubar.add_cascade(label="Help", menu=help_menu)
         
         self.root.config(menu=menubar)
         
@@ -139,16 +138,16 @@ class FileSelectorApp:
     def show_about(self):
         """Zeigt einen Informationsdialog über die Anwendung an."""
         from tkinter import messagebox
-        messagebox.showinfo("Über", f"PlantUML to Draw.io Converter\nVersion {VERSION}\n© 2025 doubleSlash.de")
+        messagebox.showinfo("About", f"PlantUML to Draw.io Converter\nVersion {VERSION}\n© 2025 doubleSlash.de")
 
     def open_file(self):
         file_path = filedialog.askopenfilename(
-            title="Datei auswählen",
-            filetypes=[("PlantUML und Text Dateien", ("*.puml", "*.txt", "*.plantuml", "*.uml"))]
+            title="Select File",
+            filetypes=[("PlantUML and Text Files", ("*.puml", "*.txt", "*.plantuml", "*.uml"))]
         )
         if file_path:
             self.current_file = os.path.splitext(os.path.basename(file_path))[0]
-            self.filename_label.configure(text=f"Geladene Datei: {os.path.basename(file_path)}")
+            self.filename_label.configure(text=f"Loaded file: {os.path.basename(file_path)}")
             try:
                 with open(file_path, "r", encoding="utf-8") as file:
                     content = file.read()
@@ -158,11 +157,11 @@ class FileSelectorApp:
                 # Update button state
                 self.update_text_and_button_state()
             except Exception as e:
-                self.message_label.configure(text=f"Fehler beim Laden der Datei: {e}")
+                self.message_label.configure(text=f"Error loading file: {e}")
                 self.convert_button.configure(state="disabled")
         else:
-            self.filename_label.configure(text="Keine Datei ausgewählt.")
-            self.message_label.configure(text="Bitte wählen Sie eine PlantUML-Datei zum Konvertieren aus.")
+            self.filename_label.configure(text="No file selected.")
+            self.message_label.configure(text="Please select a PlantUML file to convert.")
             # Reset text widget
             self.text_widget.delete("1.0", "end")
             self.convert_button.configure(state="disabled")
@@ -175,16 +174,16 @@ class FileSelectorApp:
         # Update Convert button state
         if is_valid:
             self.convert_button.configure(state="normal")
-            self.message_label.configure(text="Gültiges PlantUML-Aktivitätsdiagramm.")
+            self.message_label.configure(text="Valid PlantUML activity diagram.")
         else:
             self.convert_button.configure(state="disabled")
-            self.message_label.configure(text="Ungültiges PlantUML-Aktivitätsdiagramm. Konvertierung deaktiviert.")
+            self.message_label.configure(text="Invalid PlantUML activity diagram. Conversion disabled.")
 
     def convert_to_drawio(self):
         # Hole den Inhalt des Text-Widgets (PlantUML-Code)
         plantuml_code = self.text_widget.get("1.0", "end")
         if not plantuml_code.strip():
-            self.message_label.configure(text="Kein PlantUML-Code für die Konvertierung verfügbar.")
+            self.message_label.configure(text="No PlantUML code available for conversion.")
             return
 
         try:
@@ -200,20 +199,20 @@ class FileSelectorApp:
 
             # Show save dialog to choose storage location
             save_path = filedialog.asksaveasfilename(
-                title="Draw.io-Datei speichern",
+                title="Save Draw.io File",
                 initialfile=default_filename,
                 defaultextension=".drawio",
-                filetypes=[("Draw.io Dateien", "*.drawio")]
+                filetypes=[("Draw.io Files", "*.drawio")]
             )
 
             if save_path:
                 with open(save_path, "w", encoding="utf-8") as f:
                     f.write(drawio_xml)
-                self.message_label.configure(text=f"Draw.io-Datei erstellt: {save_path}")
+                self.message_label.configure(text=f"Draw.io file created: {save_path}")
             else:
-                self.message_label.configure(text="Speichern abgebrochen.")
+                self.message_label.configure(text="Save cancelled.")
         except Exception as e:
-            self.message_label.configure(text=f"Fehler bei der Konvertierung: {e}")
+            self.message_label.configure(text=f"Error during conversion: {e}")
 
 def main():
     root = ctk.CTk()
@@ -226,7 +225,7 @@ def main():
         try:
             root.iconbitmap("p2dapp_icon.ico")
         except Exception as e:
-            print("Fehler beim Laden des Icons unter Windows:", e)
+            print("Error loading icon on Windows:", e)
     else:
         try:
             # Für CustomTkinter muss Iconhandling überprüft werden
@@ -234,7 +233,7 @@ def main():
             icon = tk.PhotoImage(file="p2dapp_icon.png")
             root.iconphoto(False, icon)
         except Exception as e:
-            print("Fehler beim Laden des Icons unter macOS/Linux:", e)
+            print("Error loading icon on macOS/Linux:", e)
 
     app = FileSelectorApp(root)
     
