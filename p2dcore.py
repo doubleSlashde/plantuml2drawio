@@ -38,13 +38,15 @@ def parse_plantuml_activity(plantuml_content):
       - Am Ende eines if-Blocks (bei endif) wird, wenn ein else existiert, ein Merge-Knoten erstellt, der beide Zweige zusammenführt.
       - Befindet sich eine Aktivität (oder ein Zweig) am Ende ohne Folgeknoten, wird automatisch ein Pfeil zum Stop-Knoten erstellt.
       - Neu: Die erste Aktivität in beiden Zweigen wird auf einer gemeinsamen Baseline ausgerichtet.
+      - Aktivitätstexte können mehrzeilig sein (zwischen : und ;).
     """
     import re
 
     # Prekompilierte Regex-Pattern zur Verbesserung der Performance und Lesbarkeit
     re_if = re.compile(r"if\s*\((.+)\)\s*then\s*\((.+)\)", re.IGNORECASE)
     re_else = re.compile(r"else\s*\((.+)\)", re.IGNORECASE)
-    re_activity = re.compile(r":(.+);")
+    re_activity_start = re.compile(r":(.*)")
+    re_activity_end = re.compile(r"(.*);")
 
     # Aufteilen der Eingabe in Zeilen
     lines = plantuml_content.splitlines()
@@ -56,6 +58,10 @@ def parse_plantuml_activity(plantuml_content):
 
     # Stack für verschachtelte if-Blöcke (ohne Koordinatenverwaltung)
     pending_ifs = []
+    
+    # Für mehrzeilige Aktivitäten
+    in_activity = False
+    activity_text = []
 
     def create_node(label, shape, x, y, width, height):
         nonlocal node_counter
@@ -70,6 +76,31 @@ def parse_plantuml_activity(plantuml_content):
         edge = Edge(id=str(edge_counter), source=source, target=target, label=label)
         edges.append(edge)
         edge_counter += 1
+        
+    def process_activity(text):
+        nonlocal last_node_id
+        label = text.strip()
+        if pending_ifs:
+            current_if = pending_ifs[-1]
+            node = create_node(label, "rectangle", 0, 0, 120, 40)
+            if not current_if["in_false"]:
+                if current_if["true_last"] is None:
+                    add_edge(current_if["decision"], node.id, current_if["true_label"])
+                else:
+                    add_edge(current_if["true_last"], node.id)
+                current_if["true_last"] = node.id
+            else:
+                if current_if["false_last"] is None:
+                    add_edge(current_if["decision"], node.id, current_if["false_label"])
+                else:
+                    add_edge(current_if["false_last"], node.id)
+                current_if["false_last"] = node.id
+            last_node_id = node.id
+        else:
+            node = create_node(label, "rectangle", 0, 0, 120, 40)
+            if last_node_id is not None:
+                add_edge(last_node_id, node.id)
+            last_node_id = node.id
 
     # Verarbeitung der einzelnen Zeilen
     for line in lines:
@@ -80,6 +111,21 @@ def parse_plantuml_activity(plantuml_content):
             continue
 
         lower_line = line.lower()
+        
+        # Wenn wir uns in einer mehrzeiligen Aktivität befinden
+        if in_activity:
+            m_end = re_activity_end.match(line)
+            if m_end:
+                # Ende der Aktivität gefunden
+                activity_text.append(m_end.group(1))
+                process_activity("\n".join(activity_text))
+                in_activity = False
+                activity_text = []
+                continue
+            else:
+                # Sammle weiteren Text
+                activity_text.append(line)
+                continue
 
         # Verarbeitung von Start und Stop
         if lower_line == "start":
@@ -144,30 +190,14 @@ def parse_plantuml_activity(plantuml_content):
             continue
 
         # Verarbeitung von Aktivitätsknoten (Format: :Text;)
-        m = re_activity.match(line)
-        if m:
-            label = m.group(1).strip()
-            if pending_ifs:
-                current_if = pending_ifs[-1]
-                node = create_node(label, "rectangle", 0, 0, 120, 40)
-                if not current_if["in_false"]:
-                    if current_if["true_last"] is None:
-                        add_edge(current_if["decision"], node.id, current_if["true_label"])
-                    else:
-                        add_edge(current_if["true_last"], node.id)
-                    current_if["true_last"] = node.id
-                else:
-                    if current_if["false_last"] is None:
-                        add_edge(current_if["decision"], node.id, current_if["false_label"])
-                    else:
-                        add_edge(current_if["false_last"], node.id)
-                    current_if["false_last"] = node.id
-                last_node_id = node.id
-            else:
-                node = create_node(label, "rectangle", 0, 0, 120, 40)
-                if last_node_id is not None:
-                    add_edge(last_node_id, node.id)
-                last_node_id = node.id
+        m_start = re_activity_start.match(line)
+        if m_start:
+            text = m_start.group(1)
+            if ";" in text:  # Einzeilige Aktivität
+                process_activity(text.split(";")[0])
+            else:  # Beginn einer mehrzeiligen Aktivität
+                in_activity = True
+                activity_text = [text]
             continue
 
         # Alle anderen Zeilen werden ignoriert
