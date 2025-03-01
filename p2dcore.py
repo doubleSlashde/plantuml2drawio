@@ -3,6 +3,11 @@ import sys
 import xml.etree.ElementTree as ET
 import argparse
 import os
+import re  # Import am Anfang der Datei statt in der Funktion
+
+# Vordefinierte Regex-Muster für bessere Performance
+RE_ACTIVITY = re.compile(r":\s*(.+?);", re.DOTALL)  # DOTALL erlaubt Newlines in Aktivitäten
+RE_IF_BLOCK = re.compile(r"if\s*\(.+?\).+?endif", re.DOTALL | re.IGNORECASE)
 
 # Klassen zur Repräsentation von Knoten und Kanten im Diagramm
 class Node:
@@ -42,75 +47,91 @@ def parse_plantuml_activity(plantuml_content):
     """
     import re
 
-    # Prekompilierte Regex-Pattern zur Verbesserung der Performance und Lesbarkeit
+    # Prekompilierte Regex-Pattern für bessere Performance
     re_if = re.compile(r"if\s*\((.+)\)\s*then\s*\((.+)\)", re.IGNORECASE)
     re_else = re.compile(r"else\s*\((.+)\)", re.IGNORECASE)
     re_activity_start = re.compile(r":(.*)")
     re_activity_end = re.compile(r"(.*);")
+    re_skip_line = re.compile(r"^\s*(?:$|'|//|@startuml|@enduml)", re.IGNORECASE)
 
-    # Aufteilen der Eingabe in Zeilen
-    lines = plantuml_content.splitlines()
+    # Initialisierung der Datenstrukturen
     nodes = []
     edges = []
     last_node_id = None
-    node_counter = 2  # Die IDs "0" und "1" sind durch draw.io vorbelegt.
+    node_counter = 2  # Die IDs "0" und "1" sind durch draw.io vorbelegt
     edge_counter = 1
-
-    # Stack für verschachtelte if-Blöcke (ohne Koordinatenverwaltung)
-    pending_ifs = []
+    pending_ifs = []  # Stack für verschachtelte if-Blöcke
     
-    # Für mehrzeilige Aktivitäten
+    # Hilfsvariablen für mehrzeilige Aktivitäten
     in_activity = False
     activity_text = []
 
-    def create_node(label, shape, x, y, width, height):
+    # Hilfsfunktionen
+    def create_node(label, shape, width=120, height=40):
+        """Erstellt einen neuen Knoten mit optimierten Standardwerten"""
         nonlocal node_counter
-        node = Node(id=str(node_counter), label=label, shape=shape,
-                    x=x, y=y, width=width, height=height)
+        node_id = str(node_counter)
+        node = Node(id=node_id, label=label, shape=shape,
+                   x=0, y=0, width=width, height=height)
         nodes.append(node)
         node_counter += 1
         return node
 
     def add_edge(source, target, label=""):
+        """Erstellt eine neue Kante zwischen zwei Knoten"""
         nonlocal edge_counter
-        edge = Edge(id=str(edge_counter), source=source, target=target, label=label)
+        edge_id = str(edge_counter)
+        edge = Edge(id=edge_id, source=source, target=target, label=label)
         edges.append(edge)
         edge_counter += 1
+        return edge
         
     def process_activity(text):
+        """Verarbeitet einen Aktivitätstext und erstellt den entsprechenden Knoten"""
         nonlocal last_node_id
         label = text.strip()
+        
+        # Neue Aktivität erstellen
+        node = create_node(label, "rectangle")
+        
+        # Verbindung zum vorherigen Knoten erstellen
         if pending_ifs:
+            # Aktivität innerhalb eines if-Blocks
             current_if = pending_ifs[-1]
-            node = create_node(label, "rectangle", 0, 0, 120, 40)
+            
             if not current_if["in_false"]:
+                # True-Zweig
                 if current_if["true_last"] is None:
                     add_edge(current_if["decision"], node.id, current_if["true_label"])
                 else:
                     add_edge(current_if["true_last"], node.id)
                 current_if["true_last"] = node.id
             else:
+                # False-Zweig
                 if current_if["false_last"] is None:
                     add_edge(current_if["decision"], node.id, current_if["false_label"])
                 else:
                     add_edge(current_if["false_last"], node.id)
                 current_if["false_last"] = node.id
-            last_node_id = node.id
-        else:
-            node = create_node(label, "rectangle", 0, 0, 120, 40)
-            if last_node_id is not None:
-                add_edge(last_node_id, node.id)
-            last_node_id = node.id
+        elif last_node_id is not None:
+            # Normale Aktivität außerhalb eines if-Blocks
+            add_edge(last_node_id, node.id)
+            
+        last_node_id = node.id
+        return node
 
     # Verarbeitung der einzelnen Zeilen
-    for line in lines:
-        line = line.strip()
-        # Kommentare, leere Zeilen und Diagramm-Markierungen überspringen
-        if not line or line.startswith("'") or line.startswith("//") or \
-           line.startswith("@startuml") or line.startswith("@enduml"):
+    lines = plantuml_content.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        i += 1  # Nächste Zeile vorbereiten
+        
+        # Überspringe Kommentare, leere Zeilen und Diagramm-Markierungen
+        if re_skip_line.match(line):
             continue
 
-        lower_line = line.lower()
+        line_lower = line.lower()
         
         # Wenn wir uns in einer mehrzeiligen Aktivität befinden
         if in_activity:
@@ -121,75 +142,27 @@ def parse_plantuml_activity(plantuml_content):
                 process_activity("\n".join(activity_text))
                 in_activity = False
                 activity_text = []
-                continue
             else:
                 # Sammle weiteren Text
                 activity_text.append(line)
-                continue
+            continue
 
-        # Verarbeitung von Start und Stop
-        if lower_line == "start":
-            node = create_node("Start", "ellipse", 0, 0, 40, 40)
+        # Start- und Stop-Knoten verarbeiten (häufige Fälle zuerst prüfen)
+        if line_lower == "start":
+            node = create_node("Start", "ellipse", 40, 40)
             if last_node_id is not None:
                 add_edge(last_node_id, node.id)
             last_node_id = node.id
             continue
 
-        if lower_line == "stop":
-            node = create_node("Stop", "ellipse", 0, 0, 40, 40)
+        if line_lower == "stop":
+            node = create_node("Stop", "ellipse", 40, 40)
             if last_node_id is not None:
                 add_edge(last_node_id, node.id)
             last_node_id = node.id
             continue
 
-        # Verarbeitung der if-Bedingung
-        m = re_if.match(line)
-        if m:
-            condition, true_label = m.group(1).strip(), m.group(2).strip()
-            node = create_node(condition, "hexagon", 0, 0, 80, 40)
-            if last_node_id is not None:
-                add_edge(last_node_id, node.id)
-            last_node_id = node.id
-            pending_ifs.append({
-                "decision": node.id,
-                "true_label": true_label,
-                "true_last": None,   # Letzter Knoten des wahren Zweigs
-                "false_label": None,  # Beschriftung, falls ein else erstellt wird
-                "false_last": None,   # Letzter Knoten des falschen Zweigs
-                "in_false": False     # Gibt an, welcher Zweig aktiv ist
-            })
-            continue
-
-        # Verarbeitung des else-Zweigs
-        m = re_else.match(line)
-        if m and pending_ifs:
-            pending_ifs[-1]["false_label"] = m.group(1).strip()
-            pending_ifs[-1]["in_false"] = True
-            continue
-
-        # Verarbeitung des endif-Schlusses
-        if lower_line.startswith("endif"):
-            if pending_ifs:
-                current_if = pending_ifs.pop()
-                if current_if["false_label"] is not None:
-                    # Falls ein else-Zweig existiert, wird ein Merge-Knoten erstellt.
-                    merge_node = create_node("Merge", "rhombus", 0, 0, 50, 50)
-                    if current_if["true_last"] is not None:
-                        add_edge(current_if["true_last"], merge_node.id)
-                    if current_if["false_last"] is not None:
-                        add_edge(current_if["false_last"], merge_node.id)
-                    # Falls sich der äußere if-Block im else-Zweig befindet,
-                    # wird dessen letzter Knoten aktualisiert.
-                    if pending_ifs and pending_ifs[-1]["in_false"]:
-                        pending_ifs[-1]["false_last"] = merge_node.id
-                    else:
-                        last_node_id = merge_node.id
-                else:
-                    # Ohne else wird der letzte Knoten des wahren Zweigs übernommen.
-                    last_node_id = current_if["true_last"] if current_if["true_last"] is not None else last_node_id
-            continue
-
-        # Verarbeitung von Aktivitätsknoten (Format: :Text;)
+        # Aktivitäts-Knoten verarbeiten (häufiger Fall)
         m_start = re_activity_start.match(line)
         if m_start:
             text = m_start.group(1)
@@ -200,11 +173,61 @@ def parse_plantuml_activity(plantuml_content):
                 activity_text = [text]
             continue
 
-        # Alle anderen Zeilen werden ignoriert
+        # Bedingungen und Kontrollstrukturen verarbeiten
+        # if-Bedingung
+        m_if = re_if.match(line)
+        if m_if:
+            condition, true_label = m_if.group(1).strip(), m_if.group(2).strip()
+            node = create_node(condition, "hexagon", 80, 40)
+            if last_node_id is not None:
+                add_edge(last_node_id, node.id)
+            last_node_id = node.id
+            
+            # If-Block auf den Stack legen
+            pending_ifs.append({
+                "decision": node.id,
+                "true_label": true_label,
+                "true_last": None,   # Letzter Knoten des wahren Zweigs
+                "false_label": None, # Beschriftung für else-Zweig
+                "false_last": None,  # Letzter Knoten des falschen Zweigs
+                "in_false": False    # Aktueller Zweig (true/false)
+            })
+            continue
 
-    # Falls der letzte Knoten nicht "Stop" ist, wird ein Stop-Knoten automatisch angehängt.
+        # else-Zweig
+        m_else = re_else.match(line)
+        if m_else and pending_ifs:
+            pending_ifs[-1]["false_label"] = m_else.group(1).strip()
+            pending_ifs[-1]["in_false"] = True
+            continue
+
+        # endif-Schluss
+        if line_lower.startswith("endif"):
+            if pending_ifs:
+                current_if = pending_ifs.pop()
+                if current_if["false_label"] is not None:
+                    # Mit else-Zweig: Merge-Knoten erstellen
+                    merge_node = create_node("Merge", "rhombus", 50, 50)
+                    
+                    # Verbindungen zum Merge-Knoten erstellen
+                    if current_if["true_last"] is not None:
+                        add_edge(current_if["true_last"], merge_node.id)
+                    if current_if["false_last"] is not None:
+                        add_edge(current_if["false_last"], merge_node.id)
+                    
+                    # Letzten Knoten aktualisieren
+                    if pending_ifs and pending_ifs[-1]["in_false"]:
+                        pending_ifs[-1]["false_last"] = merge_node.id
+                    else:
+                        last_node_id = merge_node.id
+                else:
+                    # Ohne else: Letzten Knoten des wahren Zweigs übernehmen
+                    last_node_id = current_if["true_last"] if current_if["true_last"] is not None else last_node_id
+            continue
+
+    # Abschluss: Falls kein Stop-Knoten am Ende steht, einen automatisch anhängen
     if nodes and nodes[-1].label != "Stop":
-        stop_node = create_node("Stop", "ellipse", 0, 0, 40, 40)
+        stop_node = create_node("Stop", "ellipse", 40, 40)
         if last_node_id is not None:
             add_edge(last_node_id, stop_node.id)
 
@@ -212,83 +235,110 @@ def parse_plantuml_activity(plantuml_content):
 
 def create_drawio_xml(nodes, edges):
     """
-    Creates the XML content in draw.io format.
+    Erstellt den XML-Inhalt im draw.io-Format.
+    
+    Parameter:
+      nodes - Liste der Knotenobjekte
+      edges - Liste der Kantenobjekte
+    
+    Rückgabe:
+      XML-String im draw.io-Format
     """
-    mxfile = ET.Element("mxfile", {
-        "host": "app.diagrams.net",
-        "modified": "2025-02-10T00:00:00.000Z",
-        "agent": "Python Script",
-        "version": "15.7.7"
-    })
-    diagram = ET.SubElement(mxfile, "diagram", {"id": "diagramId", "name": "Page-1"})
-    mxGraphModel = ET.SubElement(diagram, "mxGraphModel", {
-        "dx": "1264",
-        "dy": "684",
-        "grid": "1",
-        "gridSize": "10",
-        "guides": "1",
-        "tooltips": "1",
-        "connect": "1",
-        "arrows": "1",
-        "fold": "1",
-        "page": "1",
-        "pageScale": "1",
-        "pageWidth": "850",
-        "pageHeight": "1100",
-        "math": "0"
-    })
-    root = ET.SubElement(mxGraphModel, "root")
-    ET.SubElement(root, "mxCell", {"id": "0"})
-    ET.SubElement(root, "mxCell", {"id": "1", "parent": "0"})
-
-    # Create nodes (mxCell for nodes)
-    for node in nodes:
+    # Konstanten für Knoten-Stile
+    STYLES = {
+        "start_stop": "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;fontColor=#ffffff;",
+        "ellipse": "ellipse;whiteSpace=wrap;html=1;aspect=fixed;",
+        "hexagon": "shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=#ffffff;fillColor=#00A5E1;strokeColor=none;size=10;",
+        "merge": "rhombus;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#00A5E1;fontColor=#ffffff;",
+        "activity": "rounded=1;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#DCE9F1;",
+        "edge": "edgeStyle=elbowEdgeStyle;elbow=vertical;strokeWidth=1.5;"
+    }
+    
+    # Grundgerüst des XML erstellen
+    def create_base_xml():
+        mxfile = ET.Element("mxfile", {
+            "host": "app.diagrams.net",
+            "modified": "2025-02-10T00:00:00.000Z",
+            "agent": "Python Script",
+            "version": "15.7.7"
+        })
+        diagram = ET.SubElement(mxfile, "diagram", {"id": "diagramId", "name": "Page-1"})
+        mxGraphModel = ET.SubElement(diagram, "mxGraphModel", {
+            "dx": "1264",
+            "dy": "684",
+            "grid": "1",
+            "gridSize": "10",
+            "guides": "1",
+            "tooltips": "1",
+            "connect": "1",
+            "arrows": "1",
+            "fold": "1",
+            "page": "1",
+            "pageScale": "1",
+            "pageWidth": "850",
+            "pageHeight": "1100",
+            "math": "0"
+        })
+        root = ET.SubElement(mxGraphModel, "root")
+        ET.SubElement(root, "mxCell", {"id": "0"})
+        ET.SubElement(root, "mxCell", {"id": "1", "parent": "0"})
+        return mxfile, root
+    
+    # Stil für einen Knoten basierend auf seinem Typ auswählen
+    def get_node_style(node):
         if node.label in ["Start", "Stop"]:
-            # Start and stop nodes: black filled with white text
-            style = "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;fontColor=#ffffff;"
+            return STYLES["start_stop"]
         elif node.shape == "ellipse":
-            style = "ellipse;whiteSpace=wrap;html=1;aspect=fixed;"
+            return STYLES["ellipse"]
         elif node.shape == "hexagon":
-            # Decision nodes: hexagon with white text
-            style = "shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=#ffffff;fillColor=#00A5E1;strokeColor=none;size=10;"
+            return STYLES["hexagon"] 
+        elif node.label == "Merge":
+            return STYLES["merge"]
         else:
-            if node.label == "Merge":
-                # Merge node as a rhombus in the same style as the condition
-                style = "rhombus;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#00A5E1;fontColor=#ffffff;"
-            else:
-                style = "rounded=1;whiteSpace=wrap;html=1;strokeColor=none;fillColor=#DCE9F1;"
-        cell_attribs = {
-            "id": node.id,
-            "value": node.label,
-            "style": style,
-            "vertex": "1",
-            "parent": "1"
-        }
-        cell = ET.SubElement(root, "mxCell", cell_attribs)
-        geometry_attribs = {
-            "x": str(node.x),
-            "y": str(node.y),
-            "width": str(node.width),
-            "height": str(node.height),
-            "as": "geometry"
-        }
-        ET.SubElement(cell, "mxGeometry", geometry_attribs)
-
-    # Create edges (mxCell for edges)
-    for edge in edges:
-        cell_attribs = {
-            "id": "e" + edge.id,
-            "value": edge.label,
-            "edge": "1",
-            "source": edge.source,
-            "target": edge.target,
-            "parent": "1",
-            "style": "edgeStyle=elbowEdgeStyle;elbow=vertical;strokeWidth=1.5;"
-        }
-        cell = ET.SubElement(root, "mxCell", cell_attribs)
-        ET.SubElement(cell, "mxGeometry", {"relative": "1", "as": "geometry"})
-
-    # Create the XML string
+            return STYLES["activity"]
+    
+    # Knoten zum XML hinzufügen
+    def add_nodes_to_xml(root, nodes):
+        for node in nodes:
+            style = get_node_style(node)
+            cell_attribs = {
+                "id": node.id,
+                "value": node.label,
+                "style": style,
+                "vertex": "1",
+                "parent": "1"
+            }
+            cell = ET.SubElement(root, "mxCell", cell_attribs)
+            geometry_attribs = {
+                "x": str(node.x),
+                "y": str(node.y),
+                "width": str(node.width),
+                "height": str(node.height),
+                "as": "geometry"
+            }
+            ET.SubElement(cell, "mxGeometry", geometry_attribs)
+    
+    # Kanten zum XML hinzufügen
+    def add_edges_to_xml(root, edges):
+        for edge in edges:
+            cell_attribs = {
+                "id": "e" + edge.id,
+                "value": edge.label,
+                "edge": "1",
+                "source": edge.source,
+                "target": edge.target,
+                "parent": "1",
+                "style": STYLES["edge"]
+            }
+            cell = ET.SubElement(root, "mxCell", cell_attribs)
+            ET.SubElement(cell, "mxGeometry", {"relative": "1", "as": "geometry"})
+    
+    # Hauptlogik
+    mxfile, root = create_base_xml()
+    add_nodes_to_xml(root, nodes)
+    add_edges_to_xml(root, edges)
+    
+    # XML als String zurückgeben
     return ET.tostring(mxfile, encoding="utf-8", method="xml").decode("utf-8")
 
 def create_json(nodes, edges):
@@ -326,175 +376,175 @@ def create_json(nodes, edges):
     }
     return json.dumps(data, indent=2, ensure_ascii=False)
 
-def is_valid_plantuml_activitydiagram_string(plantuml_content):
+def is_valid_plantuml_activitydiagram(plantuml_content):
     """
-    Checks if the provided string contains a valid PlantUML activity diagram.
+    Prüft, ob der übergebene String ein gültiges PlantUML-Aktivitätsdiagramm enthält.
 
-    Criteria:
-      - The string must contain the markers @startuml and @enduml.
-      - The string must include the keywords 'start' and 'stop'.
-      - There must be at least one activity line (e.g., in the format :Text;)
-        or alternatively an if-block with 'if' and 'endif'.
+    Kriterien:
+      - Der String muss die Markierungen @startuml und @enduml enthalten.
+      - Der String muss die Schlüsselwörter 'start' und 'stop' enthalten (Groß-/Kleinschreibung wird ignoriert).
+      - Es muss mindestens eine Aktivitätszeile (im Format :Text;) oder alternativ
+        ein if-Block mit 'if' und 'endif' vorhanden sein.
 
-    Returns:
-      - True if all criteria are met.
-      - False otherwise.
+    Rückgabe:
+      - True, wenn alle Kriterien erfüllt sind.
+      - False, andernfalls.
     """
-    # Check for the presence of @startuml and @enduml.
+    # Schnelle String-Überprüfungen zuerst für bessere Performance
     if "@startuml" not in plantuml_content or "@enduml" not in plantuml_content:
         return False
 
-    # Check for 'start' and 'stop' (case-insensitive).
-    if "start" not in plantuml_content.lower() or "stop" not in plantuml_content.lower():
+    plantuml_lower = plantuml_content.lower()
+    if "start" not in plantuml_lower or "stop" not in plantuml_lower:
         return False
 
-    import re
-    # Check for at least one activity line in the format :Text;
-    if not re.search(r":\s*(.+);", plantuml_content):
-        # If no activity line is found, alternatively check for an if-block.
-        if "if" not in plantuml_content.lower() or "endif" not in plantuml_content.lower():
+    # Überprüfung auf Aktivitätszeile oder if-Block mit kompilierten Regex-Mustern
+    if not RE_ACTIVITY.search(plantuml_content):
+        # Wenn keine Aktivitätszeile gefunden wurde, alternativ nach einem if-Block suchen
+        if not RE_IF_BLOCK.search(plantuml_content):
             return False
 
     return True
 
-def layout_activitydiagram(nodes, edges, vertical_spacing=80, horizontal_spacing=200, start_x=60, start_y=60):
+def layout_activitydiagram(nodes, edges, vertical_spacing=100, horizontal_spacing=200, start_x=60, start_y=60):
     """
     Neues Layout für Aktivitätsdiagramme mittels rekursiver Tiefensuche (DFS) und Spaltenzuordnung,
     wobei für alle alternativen (else) Pfade eine neue Spalte verwendet wird und Merge-Knoten stets
     vertikal unterhalb der Knoten platziert werden, aus denen sie zusammenfließen. Zusätzlich 
     wird der Stop-Knoten immer ganz ans Ende (unterhalb aller anderen Knoten) gesetzt.
 
-    Algorithmus:
-      1. Initialisierung:
-         - Ein Spaltenzähler (currentColumn) beginnt bei 1.
-         - Es werden zwei Mappings erstellt, um jedem Knoten seine Spaltenzuordnung und einen
-           vertikalen Index ("Order") zuzuweisen.
-      
-      2. Platzierung des Startknotens:
-         - Der Startknoten (angenommen, das Label lautet "Start") wird der ersten Spalte 
-           (currentColumn = 1) und Order 0 zugeordnet.
-      
-      3. Diagramm-Traversierung:
-         - Das Diagramm wird mittels DFS traversiert.
-         - Für Knoten, die keinem alternativen Pfad folgen (bspw. Ja-Pfade), verbleibt der Knoten
-           in der aktuellen Spalte und der Order wird um 1 erhöht.
-         - Für alle alternativen Pfade (else-Zweige bzw. alle Kanten, die explizit als "nein" oder
-           als alternativer Ausgang eines Entscheidungsknotens identifiziert werden):
-             → Es wird eine neue Spalte eröffnet (curr_col + 1) und der Order bleibt gleich,
-                sodass der Knoten auf derselben vertikalen Höhe wie sein Ursprungknoten (bzw. die
-                zugehörige Entscheidung) positioniert ist.
-      
-      4. Behandlung von Entscheidungsknoten:
-         - Entscheidungsknoten (z. B. Hexagon) werden in der aktuellen Spalte platziert.
-         - Bei ihren Ausgängen gilt: Der erste Ausgang folgt der Ja-Logik (Spalte bleibt, Order + 1),
-           alle weiteren werden als alternative (else) Pfade betrachtet und erhalten eine neue Spalte.
-      
-      5. Merge-Knoten:
-         - Merge-Knoten werden immer vertikal unterhalb der Knoten platziert, aus denen sie
-           zusammenfließen. Daher wird der Order für einen Merge-Knoten als (aktueller Order + 1)
-           gesetzt, unabhängig vom Pfad.
-      
-      6. Rekursive Anwendung und Abbruch:
-         - Die DFS-Traversierung wird fortgesetzt, bis alle Knoten verarbeitet sind.
-      
-      7. Nachbearbeitung:
-         - Der Stop-Knoten wird nach der Traversierung auf einen Order-Wert gesetzt, der größer ist als
-           der aller anderen Knoten (sodass er ganz unten erscheint).
-         - Abschließend werden die x- und y-Koordinaten der Knoten anhand der Spalten- und Order-Zuordnung
-           berechnet:
-               x = (start_x + x_offset) + (Spalte - 1) × horizontal_spacing - (node.width / 2)
-               y = start_y + Order × vertical_spacing
-         - Der Beginn der ersten Spalte erhält einen horizontalen Offset von 40 Pixeln.
+    Parameter:
+      nodes - Liste der Knotenobjekte
+      edges - Liste der Kantenobjekte
+      vertical_spacing - Vertikaler Abstand zwischen Knoten
+      horizontal_spacing - Horizontaler Abstand zwischen Spalten
+      start_x - Startkoordinate X
+      start_y - Startkoordinate Y
     """
-    # Mapping, um Knoten schnell anhand ihrer ID zu finden.
-    node_by_id = {node.id: node for node in nodes}
+    from collections import defaultdict
+    import sys
     
-    # Erstelle ein Adjazenzlisten-Mapping: Quelle -> Liste von (Ziel, Label)
-    graph = {}
-    for edge in edges:
-        graph.setdefault(edge.source, []).append((edge.target, edge.label.lower()))
+    # Konstanten für Labels und Shapes
+    LABEL_START = "start"
+    LABEL_STOP = "stop"
+    LABEL_MERGE = "merge"
+    SHAPE_HEXAGON = "hexagon"
+    PATH_LABEL_NO = "nein"
     
-    # Dictionaries zur Speicherung der Spalten- und Order-Zuordnung für jeden Knoten.
+    # Maximale Rekursionstiefe erhöhen für komplexe Diagramme
+    sys.setrecursionlimit(max(1000, len(nodes) * 5))
+    
+    # Hilfsfunktion: Knoten-ID-Mapping erstellen
+    def create_node_id_mapping():
+        return {node.id: node for node in nodes}
+    
+    # Hilfsfunktion: Adjazenzlisten erstellen
+    def create_adjacency_list():
+        graph = defaultdict(list)
+        for edge in edges:
+            graph[edge.source].append((edge.target, edge.label.lower()))
+        return graph
+    
+    # Rekursive DFS-Funktion mit Memoization
+    def dfs(node_id, curr_col, curr_order):
+        # Wenn der Knoten bereits besucht wurde, optimale Position aktualisieren
+        if node_id in column_mapping:
+            if node_by_id[node_id].label.lower() == LABEL_MERGE:
+                # Merge-Knoten: maximalen Order verwenden (nach unten)
+                order_mapping[node_id] = max(order_mapping[node_id], curr_order)
+            else:
+                # Andere Knoten: minimalen Order verwenden (nach oben)
+                order_mapping[node_id] = min(order_mapping[node_id], curr_order)
+            column_mapping[node_id] = min(column_mapping[node_id], curr_col)
+            return
+        
+        # Neue Position zuweisen
+        column_mapping[node_id] = curr_col
+        order_mapping[node_id] = curr_order
+        
+        # Alle Kinder durchlaufen
+        for index, (child_id, path_label) in enumerate(graph.get(node_id, [])):
+            child_node = node_by_id.get(child_id)
+            if not child_node:
+                continue
+                
+            next_col, next_order = calculate_next_position(
+                node_id, child_id, path_label, index, curr_col, curr_order
+            )
+            dfs(child_id, next_col, next_order)
+    
+    # Berechnung der nächsten Position für einen Knoten
+    def calculate_next_position(parent_id, child_id, path_label, index, curr_col, curr_order):
+        child_node = node_by_id.get(child_id)
+        
+        # Merge-Knoten: gleiche Spalte, eine Ebene tiefer
+        if child_node and child_node.label.lower() == LABEL_MERGE:
+            return curr_col, curr_order + 1
+            
+        # Entscheidungsknoten verarbeiten
+        if node_by_id[parent_id].shape == SHAPE_HEXAGON:
+            if index == 0:
+                # Erster Ausgang (Ja-Pfad) - gleiche Spalte, eine Ebene tiefer
+                return curr_col, curr_order + 1
+            else:
+                # Alternative Ausgänge - neue Spalte, gleiche Ebene
+                return curr_col + 1, curr_order
+        
+        # Normale Knoten: Nein-Pfad in neue Spalte, sonst eine Ebene tiefer
+        if path_label == PATH_LABEL_NO:
+            return curr_col + 1, curr_order
+        else:
+            return curr_col, curr_order + 1
+    
+    # Hilfsfunktion: Startknoten finden
+    def find_start_nodes():
+        start_nodes = [node for node in nodes if node.label.lower() == LABEL_START]
+        if not start_nodes and nodes:
+            start_nodes = [nodes[0]]  # Fallback zum ersten Knoten
+        return start_nodes
+    
+    # Hilfsfunktion: Stop-Knoten ans Ende setzen
+    def position_stop_nodes():
+        if not order_mapping:
+            return
+            
+        max_order = max(order_mapping.values())
+        for node in nodes:
+            if node.label.lower() == LABEL_STOP:
+                order_mapping[node.id] = max_order + 1
+    
+    # Hilfsfunktion: Finale Koordinaten zuweisen
+    def assign_coordinates():
+        # Knoten nach Spalten gruppieren
+        columns = defaultdict(list)
+        for node in nodes:
+            col = column_mapping.get(node.id, 1)
+            columns[col].append(node)
+        
+        # Horizontaler Offset für die erste Spalte
+        x_offset = 40
+        
+        # Koordinaten zuweisen
+        for col, node_list in columns.items():
+            # Sortieren nach Order und ID
+            node_list.sort(key=lambda n: (order_mapping.get(n.id, 0), int(n.id)))
+            for node in node_list:
+                node.x = (start_x + x_offset) + (col - 1) * horizontal_spacing - node.width / 2
+                node.y = start_y + order_mapping.get(node.id, 0) * vertical_spacing
+    
+    # Hauptroutine
+    node_by_id = create_node_id_mapping()
+    graph = create_adjacency_list()
     column_mapping = {}
     order_mapping = {}
     
-    def dfs(node_id, curr_col, curr_order):
-        # Aktualisiere (oder setze) die Spalten- und Order-Zuordnung.
-        if node_id not in column_mapping:
-            column_mapping[node_id] = curr_col
-            order_mapping[node_id] = curr_order
-        else:
-            # Für Merge-Knoten wollen wir den maximalen Order (um sie unter den urspr. Knoten zu platzieren),
-            # für alle anderen den minimalen Order.
-            if node_by_id[node_id].label.lower() == "merge":
-                order_mapping[node_id] = max(order_mapping[node_id], curr_order)
-            else:
-                order_mapping[node_id] = min(order_mapping[node_id], curr_order)
-            column_mapping[node_id] = min(column_mapping[node_id], curr_col)
-        
-        # Gehe alle ausgehenden Kanten des aktuellen Knotens durch.
-        children = graph.get(node_id, [])
-        for index, (child_id, path_label) in enumerate(children):
-            child_node = node_by_id.get(child_id)
-            # Prüfe auf Merge-Knoten
-            if child_node is not None and child_node.label.lower() == "merge":
-                next_col = curr_col      # Merge-Knoten: gleiche Spalte
-                next_order = curr_order + 1  # immer einen Schritt tiefer
-            else:
-                # Unterscheide ob wir aus einem Entscheidungsknoten (hexagon) kommen.
-                if node_by_id[node_id].shape == "hexagon":
-                    if index == 0:
-                        # Erster Ausgang (Ja-Pfad)
-                        next_col = curr_col
-                        next_order = curr_order + 1
-                    else:
-                        # Alle alternativen Ausgänge (Else-Zweig): Neue Spalte, vertikale Höhe bleibt gleich.
-                        next_col = curr_col + 1
-                        next_order = curr_order
-                else:
-                    # Für Nicht-Entscheidungsknoten: Falls das Label explizit "nein" lautet, dann alternativer Pfad.
-                    if path_label == "nein":
-                        next_col = curr_col + 1
-                        next_order = curr_order
-                    else:
-                        next_col = curr_col
-                        next_order = curr_order + 1
-            dfs(child_id, next_col, next_order)
-    
-    # Finde den Startknoten (angenommen, dessen Label lautet "Start")
-    start_nodes = [node for node in nodes if node.label.lower() == "start"]
-    if not start_nodes:
-        start_nodes = [nodes[0]]
-    
-    # Starte die DFS-Traversierung von jedem Startknoten mit Spalte 1 und Order 0.
-    for start_node in start_nodes:
+    # DFS starten
+    for start_node in find_start_nodes():
         dfs(start_node.id, 1, 0)
     
-    # Nachbearbeitung: Den Stop-Knoten immer ganz unten platzieren.
-    if order_mapping:
-        max_order = max(order_mapping.values())
-    else:
-        max_order = 0
-    for node in nodes:
-        if node.label.lower() == "stop":
-            order_mapping[node.id] = max_order + 1
-    
-    # Gruppiere die Knoten basierend auf ihrer Spaltenzuordnung.
-    columns = {}
-    for node in nodes:
-        col = column_mapping.get(node.id, 1)
-        columns.setdefault(col, []).append(node)
-    
-    # Horizontaler Offset von 40 Pixeln für die erste Spalte.
-    x_offset = 40
-
-    # Weise jedem Knoten anhand der ermittelten Order einen y-Wert und anhand der Spalte einen x-Wert zu.
-    for col, node_list in columns.items():
-        # Sortiere die Knoten innerhalb der Spalte primär nach ihrem Order-Wert, sekundär nach ihrer ID.
-        node_list.sort(key=lambda n: (order_mapping.get(n.id, 0), int(n.id)))
-        for node in node_list:
-            node.x = (start_x + x_offset) + (col - 1) * horizontal_spacing - node.width / 2
-            node.y = start_y + order_mapping.get(node.id, 0) * vertical_spacing
+    # Nachbearbeitung
+    position_stop_nodes()
+    assign_coordinates()
 
 def process_file(input_file, output_file, output_json=False):
     """
@@ -512,7 +562,7 @@ def process_file(input_file, output_file, output_json=False):
         with open(input_file, "r", encoding="utf-8") as f:
             plantuml_content = f.read()
 
-        if not is_valid_plantuml_activitydiagram_string(plantuml_content):
+        if not is_valid_plantuml_activitydiagram(plantuml_content):
             print(f"Error: The file '{input_file}' does not contain a valid PlantUML activity diagram.")
             return False
 

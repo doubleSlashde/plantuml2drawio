@@ -3,7 +3,7 @@ import os
 import customtkinter as ctk
 from tkinter import filedialog
 import tkinter as tk
-from p2dcore import parse_plantuml_activity, create_drawio_xml, is_valid_plantuml_activitydiagram_string, layout_activitydiagram
+from p2dcore import parse_plantuml_activity, create_drawio_xml, is_valid_plantuml_activitydiagram, layout_activitydiagram
 
 # Versionsnummer als Konstante
 VERSION = "1.0.8"
@@ -11,7 +11,7 @@ VERSION = "1.0.8"
 class FileSelectorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("PlantUML to Draw.io Converter")
+        self.root.title("PlantUML zu Draw.io Konverter")
         self.root.geometry("800x600")  # Larger window for better overview
 
         # Set appearance mode and default color theme
@@ -28,7 +28,7 @@ class FileSelectorApp:
         # Row 0: Filename label
         self.filename_label = ctk.CTkLabel(
             self.root, 
-            text="No file selected.",
+            text="Keine Datei ausgewählt.",
             anchor="w",
             font=("Arial", 14)
         )
@@ -43,7 +43,7 @@ class FileSelectorApp:
         # "Open File" button on the left
         self.file_button = ctk.CTkButton(
             self.button_frame, 
-            text="Open File", 
+            text="Datei öffnen", 
             command=self.open_file,
             font=("Arial", 14, "bold"),
             width=120,
@@ -61,7 +61,7 @@ class FileSelectorApp:
         # initially disabled
         self.convert_button = ctk.CTkButton(
             self.button_frame, 
-            text="Convert to Draw.io", 
+            text="Nach Draw.io konvertieren", 
             command=self.convert_to_drawio,
             state="disabled",
             font=("Arial", 14, "bold"),
@@ -75,7 +75,7 @@ class FileSelectorApp:
         # Row 2: Message label
         self.message_label = ctk.CTkLabel(
             self.root, 
-            text="Please select a PlantUML file to convert.",
+            text="Bitte wählen Sie eine PlantUML-Datei zur Konvertierung aus.",
             anchor="w",
             font=("Arial", 14)
         )
@@ -115,6 +115,7 @@ class FileSelectorApp:
         self.tk_text.tag_raise("activity_content", "keyword")  # Aktivitätstext hat Vorrang vor Schlüsselwörtern
         self.tk_text.tag_raise("activity_content", "bracket")  # Aktivitätstext hat Vorrang vor Klammern
         self.tk_text.tag_raise("activity_content", "condition")  # Aktivitätstext hat Vorrang vor Bedingungen
+        self.tk_text.tag_raise("activity_content", "arrow")  # Aktivitätstext hat Vorrang vor Pfeilen
         
         # Initiales Update
         self.text_widget.bind("<KeyRelease>", lambda event: self.update_text_and_button_state())
@@ -140,15 +141,15 @@ class FileSelectorApp:
         
         # "File" menu
         file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Open File", command=self.open_file, accelerator="Ctrl+O")
+        file_menu.add_command(label="Datei öffnen", command=self.open_file, accelerator="Strg+O")
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit, accelerator="Alt+F4")
-        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Beenden", command=self.root.quit, accelerator="Alt+F4")
+        menubar.add_cascade(label="Datei", menu=file_menu)
         
         # "Help" menu
         help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="About", command=self.show_about, accelerator="F1")
-        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="Über", command=self.show_about, accelerator="F1")
+        menubar.add_cascade(label="Hilfe", menu=help_menu)
         
         self.root.config(menu=menubar)
         
@@ -160,16 +161,16 @@ class FileSelectorApp:
     def show_about(self):
         """Zeigt einen Informationsdialog über die Anwendung an."""
         from tkinter import messagebox
-        messagebox.showinfo("About", f"PlantUML to Draw.io Converter\nVersion {VERSION}\n© 2025 doubleSlash.de")
+        messagebox.showinfo("Über", f"PlantUML zu Draw.io Konverter\nVersion {VERSION}\n© 2025 doubleSlash.de")
 
     def open_file(self):
         file_path = filedialog.askopenfilename(
-            title="Select File",
-            filetypes=[("PlantUML and Text Files", ("*.puml", "*.txt", "*.plantuml", "*.uml"))]
+            title="Datei auswählen",
+            filetypes=[("PlantUML und Text Dateien", ("*.puml", "*.txt", "*.plantuml", "*.uml"))]
         )
         if file_path:
             self.current_file = os.path.splitext(os.path.basename(file_path))[0]
-            self.filename_label.configure(text=f"Loaded file: {os.path.basename(file_path)}")
+            self.filename_label.configure(text=f"Geladene Datei: {os.path.basename(file_path)}")
             try:
                 with open(file_path, "r", encoding="utf-8") as file:
                     content = file.read()
@@ -181,11 +182,11 @@ class FileSelectorApp:
                 # Update button state
                 self.update_text_and_button_state()
             except Exception as e:
-                self.message_label.configure(text=f"Error loading file: {e}")
+                self.message_label.configure(text=f"Fehler beim Laden der Datei: {e}")
                 self.convert_button.configure(state="disabled")
         else:
-            self.filename_label.configure(text="No file selected.")
-            self.message_label.configure(text="Please select a PlantUML file to convert.")
+            self.filename_label.configure(text="Keine Datei ausgewählt.")
+            self.message_label.configure(text="Bitte wählen Sie eine PlantUML-Datei zur Konvertierung aus.")
             # Reset text widget
             self.text_widget.delete("1.0", "end")
             self.convert_button.configure(state="disabled")
@@ -193,7 +194,7 @@ class FileSelectorApp:
     def update_text_and_button_state(self):
         """Aktualisiert den Button-Status basierend auf dem aktuellen Textinhalt."""
         content = self.text_widget.get("1.0", "end")
-        is_valid = is_valid_plantuml_activitydiagram_string(content)
+        is_valid = is_valid_plantuml_activitydiagram(content)
         
         # Apply syntax highlighting
         self.apply_syntax_highlighting()
@@ -201,10 +202,10 @@ class FileSelectorApp:
         # Update Convert button state
         if is_valid:
             self.convert_button.configure(state="normal")
-            self.message_label.configure(text="Valid PlantUML activity diagram.")
+            self.message_label.configure(text="Gültiges PlantUML-Aktivitätsdiagramm.")
         else:
             self.convert_button.configure(state="disabled")
-            self.message_label.configure(text="Invalid PlantUML activity diagram. Conversion disabled.")
+            self.message_label.configure(text="Ungültiges PlantUML-Aktivitätsdiagramm. Konvertierung deaktiviert.")
 
     def apply_syntax_highlighting(self):
         """Wendet Syntax-Highlighting auf den PlantUML-Code im Textfeld an."""
@@ -215,8 +216,15 @@ class FileSelectorApp:
         # 2. Setze die Standardfarbe für den gesamten Text auf Dunkelgrau
         self.tk_text.configure(foreground="#444444")  # Dunkelgrau als Standardfarbe
         
-        # EINFACHSTER ANSATZ:
-        # 1. Schritt: Markiere alle Kommentare
+        # Wende die verschiedenen Highlighting-Regeln an
+        self._highlight_comments()
+        self._highlight_activities()
+        self._highlight_keywords()
+        self._highlight_conditions()
+        self._highlight_arrows()
+    
+    def _highlight_comments(self):
+        """Markiert Kommentare im Code"""
         start_idx = "1.0"
         while True:
             pos = self.tk_text.search("'", start_idx, "end", regexp=False)
@@ -229,8 +237,12 @@ class FileSelectorApp:
             
             # Setze Startindex für nächste Suche
             start_idx = f"{lineend}+1c"
+    
+    def _highlight_activities(self):
+        """Markiert Aktivitäten (Text in eckigen Klammern und zwischen : und ;)"""
+        debug_mode = False  # Nur für Entwicklungszwecke auf True setzen
         
-        # 2. Schritt: Markiere alle Aktivitäten (Text in eckigen Klammern)
+        # 1. Text in eckigen Klammern markieren
         start_idx = "1.0"
         while True:
             open_pos = self.tk_text.search("[", start_idx, "end", regexp=False)
@@ -249,10 +261,41 @@ class FileSelectorApp:
             content_start = f"{open_pos}+1c"
             self.tk_text.tag_add("activity_content", content_start, close_pos)
             
+            if debug_mode:
+                activity_content = self.tk_text.get(content_start, close_pos)
+                print(f"Aktivität in []: '{activity_content}'")
+            
             # Setze Startindex für nächste Suche
             start_idx = f"{close_pos}+1c"
-        
-        # 3. Schritt: Markiere Schlüsselwörter, aber nur wenn sie nicht bereits als activity_content markiert sind
+            
+        # 2. Text zwischen : und ; markieren (alternative Aktivitätssyntax)
+        start_idx = "1.0"
+        while True:
+            open_pos = self.tk_text.search(":", start_idx, "end", regexp=False)
+            if not open_pos:
+                break
+                
+            close_pos = self.tk_text.search(";", f"{open_pos}+1c", "end", regexp=False)
+            if not close_pos:
+                break
+            
+            # Markiere die Begrenzungszeichen selbst
+            self.tk_text.tag_add("bracket", open_pos, f"{open_pos}+1c")
+            self.tk_text.tag_add("bracket", close_pos, f"{close_pos}+1c")
+            
+            # Markiere den Inhalt zwischen : und ; als activity_content
+            content_start = f"{open_pos}+1c"
+            self.tk_text.tag_add("activity_content", content_start, close_pos)
+            
+            if debug_mode:
+                activity_content = self.tk_text.get(content_start, close_pos)
+                print(f"Aktivität zwischen : und ;: '{activity_content}'")
+            
+            # Setze Startindex für nächste Suche
+            start_idx = f"{close_pos}+1c"
+    
+    def _highlight_keywords(self):
+        """Markiert PlantUML-Schlüsselwörter"""
         keywords = [
             "@startuml", "@enduml", "start", "stop", "if", "then", "else", "endif",
             "while", "repeat", "fork", "end fork", "partition", "end partition", 
@@ -276,8 +319,9 @@ class FileSelectorApp:
                 
                 # Setze Startindex für nächste Suche
                 start_idx = end_pos
-        
-        # 4. Schritt: Markiere runde Klammern und ihren Inhalt
+    
+    def _highlight_conditions(self):
+        """Markiert Bedingungen (Text in runden Klammern)"""
         start_idx = "1.0"
         while True:
             open_pos = self.tk_text.search("(", start_idx, "end", regexp=False)
@@ -301,9 +345,10 @@ class FileSelectorApp:
             
             # Setze Startindex für nächste Suche
             start_idx = f"{close_pos}+1c"
-        
-        # 5. Schritt: Markiere Pfeile
-        arrow_patterns = ["->", "-->", "->>", "-->", "..>", "<-", "<--", "<<-", "<--", "<.." ]
+    
+    def _highlight_arrows(self):
+        """Markiert Pfeile im PlantUML-Code"""
+        arrow_patterns = ["->", "-->", "->>", "<-", "<--", "<<-", "..>", "<.." ]
         for pattern in arrow_patterns:
             start_idx = "1.0"
             while True:
@@ -325,57 +370,106 @@ class FileSelectorApp:
         # Hole den Inhalt des Text-Widgets (PlantUML-Code)
         plantuml_code = self.text_widget.get("1.0", "end")
         if not plantuml_code.strip():
-            self.message_label.configure(text="No PlantUML code available for conversion.")
+            self.message_label.configure(text="Kein PlantUML-Code für die Konvertierung verfügbar.")
             return
 
         try:
             # Parse PlantUML code into nodes and edges
-            nodes, edges = parse_plantuml_activity(plantuml_code)
+            try:
+                nodes, edges = parse_plantuml_activity(plantuml_code)
+            except Exception as parse_error:
+                self.message_label.configure(text=f"Fehler beim Parsen des PlantUML-Codes: {parse_error}")
+                return
+                
             # Optimize diagram layout
-            drawio_xml = layout_activitydiagram(nodes, edges)
+            try:
+                drawio_xml = layout_activitydiagram(nodes, edges)
+            except Exception as layout_error:
+                self.message_label.configure(text=f"Fehler beim Layout des Diagramms: {layout_error}")
+                return
+                
             # Generate XML for draw.io
-            drawio_xml = create_drawio_xml(nodes, edges)
+            try:
+                drawio_xml = create_drawio_xml(nodes, edges)
+            except Exception as xml_error:
+                self.message_label.configure(text=f"Fehler bei der XML-Generierung: {xml_error}")
+                return
 
             # Determine default filename
             default_filename = f"{self.current_file}.drawio" if self.current_file else "untitled.drawio"
 
             # Show save dialog to choose storage location
             save_path = filedialog.asksaveasfilename(
-                title="Save Draw.io File",
+                title="Draw.io-Datei speichern",
                 initialfile=default_filename,
                 defaultextension=".drawio",
                 filetypes=[("Draw.io Files", "*.drawio")]
             )
 
             if save_path:
-                with open(save_path, "w", encoding="utf-8") as f:
-                    f.write(drawio_xml)
-                self.message_label.configure(text=f"Draw.io file created: {save_path}")
+                try:
+                    with open(save_path, "w", encoding="utf-8") as f:
+                        f.write(drawio_xml)
+                    self.message_label.configure(text=f"Draw.io-Datei erstellt: {save_path}")
+                except IOError as io_error:
+                    self.message_label.configure(text=f"Fehler beim Speichern der Datei: {io_error}")
             else:
-                self.message_label.configure(text="Save cancelled.")
+                self.message_label.configure(text="Speichern abgebrochen.")
         except Exception as e:
-            self.message_label.configure(text=f"Error during conversion: {e}")
+            import traceback
+            print(f"Unerwarteter Fehler während der Konvertierung: {e}")
+            print(traceback.format_exc())
+            self.message_label.configure(text=f"Fehler während der Konvertierung: {e}")
 
 def main():
     root = ctk.CTk()
     # Set application title in the menu bar
     root.title("plantuml2drawio")
     
+    # Icon-Handhabung mit verbesserter Fehlerbehandlung
     import sys
-    # Set icon in a cross-platform manner
-    if sys.platform.startswith('win'):
+    import os
+    
+    def set_app_icon():
+        """Setzt das Anwendungsicon basierend auf dem Betriebssystem"""
+        icon_path = None
+        
+        # Pfade zu möglichen Icon-Dateien
+        icon_locations = [
+            # Aktuelle Arbeitsverzeichnis
+            os.path.join(os.getcwd(), "p2dapp_icon.ico"),
+            os.path.join(os.getcwd(), "p2dapp_icon.png"),
+            # Verzeichnis der Skriptdatei
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "p2dapp_icon.ico"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "p2dapp_icon.png"),
+        ]
+        
+        # Finde die erste existierende Icon-Datei
+        for path in icon_locations:
+            if os.path.exists(path):
+                icon_path = path
+                break
+        
+        if not icon_path:
+            print("Warnung: Keine Icon-Datei gefunden.")
+            return False
+            
         try:
-            root.iconbitmap("p2dapp_icon.ico")
+            if sys.platform.startswith('win') and icon_path.endswith('.ico'):
+                root.iconbitmap(icon_path)
+                return True
+            elif icon_path.endswith('.png'):
+                import tkinter as tk
+                icon = tk.PhotoImage(file=icon_path)
+                root.iconphoto(False, icon)
+                return True
         except Exception as e:
-            print("Error loading icon on Windows:", e)
-    else:
-        try:
-            # Für CustomTkinter muss Iconhandling überprüft werden
-            import tkinter as tk
-            icon = tk.PhotoImage(file="p2dapp_icon.png")
-            root.iconphoto(False, icon)
-        except Exception as e:
-            print("Error loading icon on macOS/Linux:", e)
+            print(f"Fehler beim Setzen des Icons: {e}")
+        
+        return False
+    
+    # Versuche, das Icon zu setzen
+    set_app_icon()
 
     app = FileSelectorApp(root)
     
