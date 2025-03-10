@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 import os
-import customtkinter as ctk
-from tkinter import filedialog
-import tkinter as tk
-from p2dcore import parse_plantuml_activity, create_drawio_xml, is_valid_plantuml_activitydiagram_string, layout_activitydiagram
+import sys
 
 # Versionsnummer als Konstante
 VERSION = "1.0.8"
 
+# Nur die essentiellen Funktionen aus p2dcore importieren
+# Andere Importe werden verzögert, wenn sie benötigt werden
+from p2dcore import is_valid_plantuml_activitydiagram_string
+
 class FileSelectorApp:
     def __init__(self, root):
+        # Verzögerter Import von customtkinter innerhalb der Klasse
+        import customtkinter as ctk
+        self.ctk = ctk
+        
         self.root = root
         self.root.title("PlantUML to Draw.io Converter")
         self.root.geometry("800x600")  # Larger window for better overview
@@ -20,7 +25,7 @@ class FileSelectorApp:
 
         # Create menubar
         self.create_menubar()
-
+        
         # Configure main grid
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(3, weight=1)  # Row 3 (main frame) is now dynamically expandable
@@ -136,6 +141,7 @@ class FileSelectorApp:
     
     def create_menubar(self):
         """Erstellt eine Menüleiste für den schnellen Zugriff auf Hauptfunktionen."""
+        import tkinter as tk
         menubar = tk.Menu(self.root)
         
         # "File" menu
@@ -163,6 +169,7 @@ class FileSelectorApp:
         messagebox.showinfo("About", f"PlantUML to Draw.io Converter\nVersion {VERSION}\n© 2025 doubleSlash.de")
 
     def open_file(self):
+        from tkinter import filedialog
         file_path = filedialog.askopenfilename(
             title="Select File",
             filetypes=[("PlantUML and Text Files", ("*.puml", "*.txt", "*.plantuml", "*.uml"))]
@@ -322,6 +329,10 @@ class FileSelectorApp:
                 start_idx = end_pos
 
     def convert_to_drawio(self):
+        # Importiere die benötigten Module erst jetzt, da sie nur für die Konvertierung benötigt werden
+        from p2dcore import parse_plantuml_activity, create_drawio_xml, layout_activitydiagram
+        from tkinter import filedialog
+        
         # Hole den Inhalt des Text-Widgets (PlantUML-Code)
         plantuml_code = self.text_widget.get("1.0", "end")
         if not plantuml_code.strip():
@@ -357,33 +368,48 @@ class FileSelectorApp:
             self.message_label.configure(text=f"Error during conversion: {e}")
 
 def main():
+    # Import erst bei Bedarf, um die Startzeit zu verkürzen
+    import customtkinter as ctk
+    
+    # Splash-Screen Optionen (können implementiert werden, um die wahrgenommene Startzeit zu verringern)
+    # splash_visible = False
+    
+    # try:
+    #    # Hier könnte ein minimaler Splash-Screen gezeigt werden
+    #    # splash_visible = True
+    # except:
+    #    pass
+    
     root = ctk.CTk()
     # Set application title in the menu bar
     root.title("plantuml2drawio")
     
-    import sys
-    # Set icon in a cross-platform manner
+    # Icon-Handling verzögern - wir benutzen ein Fallback ohne Exception
     if sys.platform.startswith('win'):
         try:
-            root.iconbitmap("p2dapp_icon.ico")
-        except Exception as e:
-            print("Error loading icon on Windows:", e)
+            root.after(100, lambda: root.iconbitmap("p2dapp_icon.ico"))
+        except:
+            pass
     else:
-        try:
-            # Für CustomTkinter muss Iconhandling überprüft werden
-            import tkinter as tk
-            icon = tk.PhotoImage(file="p2dapp_icon.png")
-            root.iconphoto(False, icon)
-        except Exception as e:
-            print("Error loading icon on macOS/Linux:", e)
+        def set_icon():
+            try:
+                import tkinter as tk
+                icon = tk.PhotoImage(file="p2dapp_icon.png")
+                root.iconphoto(False, icon)
+            except:
+                pass
+        root.after(100, set_icon)
 
     app = FileSelectorApp(root)
     
-    # Bring window to the front
-    root.lift()
-    root.attributes("-topmost", True)
-    root.after(100, lambda: root.focus_force())
-    root.after(500, lambda: root.attributes("-topmost", False))
+    # Fenster erst nach vollständigem Laden in den Vordergrund bringen
+    def bring_to_front():
+        root.lift()
+        root.attributes("-topmost", True)
+        root.after(100, lambda: root.focus_force())
+        root.after(500, lambda: root.attributes("-topmost", False))
+        
+    root.after(200, bring_to_front)
     
     root.mainloop()
 
