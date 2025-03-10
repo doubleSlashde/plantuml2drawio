@@ -7,7 +7,7 @@ VERSION = "1.0.8"
 
 # Nur die essentiellen Funktionen aus p2dcore importieren
 # Andere Importe werden verzögert, wenn sie benötigt werden
-from p2dcore import is_valid_plantuml_activitydiagram_string
+from p2dcore import is_valid_plantuml_activitydiagram
 
 class FileSelectorApp:
     def __init__(self, root):
