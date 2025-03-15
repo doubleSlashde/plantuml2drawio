@@ -49,10 +49,10 @@ python p2dapp.py
 
 Detaillierte Dokumentation ist im `docs`-Verzeichnis verfügbar:
 
-- [Installation und Benutzung](docs/Installation_und_Benutzung.md)
-- [Arbeitsablauf](docs/Arbeitsablauf.md)
-- [Systemarchitektur](docs/Systemarchitektur.md)
-- [Erweiterungsmöglichkeiten](docs/Erweiterungen.md)
+- [Installation und Benutzung](Installation_und_Benutzung.md)
+- [Arbeitsablauf](Arbeitsablauf.md)
+- [Systemarchitektur](Systemarchitektur.md)
+- [Erweiterungsmöglichkeiten](Erweiterungen.md)
 
 ## 🧪 Beispiele
 
@@ -98,7 +98,7 @@ stop
 
 ## 🤝 Mitwirken
 
-Beiträge sind willkommen! Schauen Sie sich die [Erweiterungsmöglichkeiten](docs/Erweiterungen.md) an, um mehr über mögliche Beiträge zu erfahren.
+Beiträge sind willkommen! Bitte lesen Sie unsere [Beitragsrichtlinien](CONTRIBUTING.md) für weitere Informationen.
 
 ## 📄 Lizenz
 
@@ -113,4 +113,4 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die [LICENSE](LICENSE
 
 <p align="center">
   Erstellt mit ❤️ für UML-Enthusiasten und Softwareentwickler
-</p>
+</p> 
