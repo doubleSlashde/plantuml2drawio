@@ -3,11 +3,10 @@ import os
 import sys
 
 # Versionsnummer als Konstante
-VERSION = "1.0.8"
+VERSION = "1.1.0"
 
-# Nur die essentiellen Funktionen aus p2dcore importieren
-# Andere Importe werden verzögert, wenn sie benötigt werden
-from p2dcore import is_valid_plantuml_activitydiagram
+# Importiere die Funktion aus dem neuen Modul mit dem neuen Namen
+from modules.activity_processor import is_valid_activity_diagram
 
 class FileSelectorApp:
     def __init__(self, root):
@@ -201,7 +200,7 @@ class FileSelectorApp:
     def update_text_and_button_state(self):
         """Aktualisiert den Button-Status basierend auf dem aktuellen Textinhalt."""
         content = self.text_widget.get("1.0", "end")
-        is_valid = is_valid_plantuml_activitydiagram(content)
+        is_valid = is_valid_activity_diagram(content)
         
         # Apply syntax highlighting
         self.apply_syntax_highlighting()
@@ -375,7 +374,11 @@ class FileSelectorApp:
 
     def convert_to_drawio(self):
         # Importiere die benötigten Module erst jetzt, da sie nur für die Konvertierung benötigt werden
-        from p2dcore import parse_plantuml_activity, create_drawio_xml, layout_activitydiagram
+        from modules.activity_processor import (
+            parse_activity_diagram,
+            layout_activity_diagram,
+            create_activity_drawio_xml
+        )
         from tkinter import filedialog
         
         # Hole den Inhalt des Text-Widgets (PlantUML-Code)
@@ -387,21 +390,21 @@ class FileSelectorApp:
         try:
             # Parse PlantUML code into nodes and edges
             try:
-                nodes, edges = parse_plantuml_activity(plantuml_code)
+                nodes, edges = parse_activity_diagram(plantuml_code)
             except Exception as parse_error:
                 self.message_label.configure(text=f"Fehler beim Parsen des PlantUML-Codes: {parse_error}")
                 return
                 
             # Optimize diagram layout
             try:
-                drawio_xml = layout_activitydiagram(nodes, edges)
+                layout_activity_diagram(nodes, edges)
             except Exception as layout_error:
                 self.message_label.configure(text=f"Fehler beim Layout des Diagramms: {layout_error}")
                 return
                 
             # Generate XML for draw.io
             try:
-                drawio_xml = create_drawio_xml(nodes, edges)
+                drawio_xml = create_activity_drawio_xml(nodes, edges)
             except Exception as xml_error:
                 self.message_label.configure(text=f"Fehler bei der XML-Generierung: {xml_error}")
                 return
