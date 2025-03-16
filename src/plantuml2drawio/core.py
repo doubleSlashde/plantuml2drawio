@@ -11,22 +11,25 @@ import re
 import sys
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from plantuml2drawio.config import (DIAGRAM_TYPE_ACTIVITY, DIAGRAM_TYPE_CLASS,
+                                    DIAGRAM_TYPE_SEQUENCE,
+                                    DIAGRAM_TYPE_UNKNOWN,
+                                    FILE_EXTENSION_DRAWIO)
 from plantuml2drawio.processors.activity_processor import (
     Edge, Node, create_activity_drawio_xml, create_json,
     is_valid_activity_diagram, layout_activity_diagram, parse_activity_diagram)
 
-# Konstanten
+# Constants
 OUTPUT_FORMAT_JSON = "JSON"
 OUTPUT_FORMAT_XML = "Draw.io XML"
 DEFAULT_JSON_EXT = ".json"
 DEFAULT_DRAWIO_EXT = ".drawio"
-DIAGRAM_TYPE_ACTIVITY = "activity"
 DIAGRAM_TYPE_NOT_PLANTUML = "not_plantuml"
 
-# Vordefinierte Regex-Muster für bessere Performance
-RE_ACTIVITY = re.compile(
-    r":\s*(.+?);", re.DOTALL
-)  # DOTALL erlaubt Newlines in Aktivitäten
+# Predefined regex patterns for better performance
+RE_ACTIVITY = re.compile(r"^\s*@startuml\s*\n.*?activity\s*\n.*?@enduml\s*$", re.DOTALL)
+RE_SEQUENCE = re.compile(r"^\s*@startuml\s*\n.*?sequence\s*\n.*?@enduml\s*$", re.DOTALL)
+RE_CLASS = re.compile(r"^\s*@startuml\s*\n.*?class\s*\n.*?@enduml\s*$", re.DOTALL)
 RE_IF_BLOCK = re.compile(r"if\s*\(.+?\).+?endif", re.DOTALL | re.IGNORECASE)
 RE_SEQUENCE_ARROW = re.compile(r"[^\s]+\s*[-=]+>|<[-=]+\s*[^\s]+")
 RE_CLASS_RELATION = re.compile(
@@ -44,8 +47,7 @@ RE_PACKAGE = re.compile(r"package\s+[\w\"]+")
 
 
 def determine_plantuml_diagram_type(plantuml_content: str) -> str:
-    """
-    Determines the type of PlantUML diagram based on its content.
+    """Determine the type of PlantUML diagram based on its content.
 
     Supported diagram types:
     - Activity diagram
@@ -83,10 +85,8 @@ def determine_plantuml_diagram_type(plantuml_content: str) -> str:
 
     # Sequence diagram detection
     sequence_indicators = 0
-    if RE_SEQUENCE_ARROW.search(plantuml_content):
-        sequence_indicators += (
-            1  # Reduced weight as this can appear in other diagrams too
-        )
+    if RE_SEQUENCE.search(plantuml_content):
+        sequence_indicators += 1  # Reduced weight as this can appear in other diagrams
     if (
         "participant" in content_lower
         or "actor" in content_lower
@@ -94,13 +94,11 @@ def determine_plantuml_diagram_type(plantuml_content: str) -> str:
     ):
         sequence_indicators += 1
     if "activate" in content_lower or "deactivate" in content_lower:
-        sequence_indicators += (
-            2  # Increased weight as these are specific to sequence diagrams
-        )
+        sequence_indicators += 2  # Increased weight for sequence-specific keywords
 
     # Class diagram detection
     class_indicators = 0
-    if RE_CLASS_DEF.search(plantuml_content):
+    if RE_CLASS.search(plantuml_content):
         class_indicators += 2
     if RE_CLASS_RELATION.search(plantuml_content):
         class_indicators += 1
@@ -133,18 +131,16 @@ def determine_plantuml_diagram_type(plantuml_content: str) -> str:
     if RE_PACKAGE.search(plantuml_content) and not RE_STATE.search(plantuml_content):
         component_indicators += 1  # Packages are common in component diagrams
     if "database" in content_lower or "queue" in content_lower:
-        component_indicators += 1  # These are often used in component diagrams
+        component_indicators += 1  # Common in component diagrams
 
     # State diagram detection
     state_indicators = 0
     if RE_STATE.search(plantuml_content):
         state_indicators += 3  # Increased weight for state keyword
-    if (
-        "[*]" in plantuml_content
-    ):  # Start/end state notation is very specific to state diagrams
+    if "[*]" in plantuml_content:  # Start/end state notation
         state_indicators += 2
     if "state" in content_lower and "{" in plantuml_content and "}" in plantuml_content:
-        state_indicators += 1  # Nested states are common in state diagrams
+        state_indicators += 1  # Nested states are common
 
     # Object diagram detection
     object_indicators = 0
@@ -168,8 +164,8 @@ def determine_plantuml_diagram_type(plantuml_content: str) -> str:
     # Determine the diagram type based on the highest indicator count
     indicators = {
         DIAGRAM_TYPE_ACTIVITY: activity_indicators,
-        "sequence": sequence_indicators,
-        "class": class_indicators,
+        DIAGRAM_TYPE_SEQUENCE: sequence_indicators,
+        DIAGRAM_TYPE_CLASS: class_indicators,
         "usecase": usecase_indicators,
         "component": component_indicators,
         "state": state_indicators,
@@ -193,16 +189,15 @@ def determine_plantuml_diagram_type(plantuml_content: str) -> str:
 def process_diagram(
     plantuml_content: str, output_json: bool = False
 ) -> Tuple[Optional[str], Optional[str]]:
-    """
-    Verarbeitet einen PlantUML-Inhalt und erzeugt die entsprechende XML- oder JSON-Darstellung.
+    """Process PlantUML content and generate XML or JSON representation.
 
     Args:
-        plantuml_content: Inhalt des PlantUML-Diagramms
-        output_json: Bei True wird JSON ausgegeben, sonst XML
+        plantuml_content: Content of the PlantUML diagram
+        output_json: If True, output JSON, otherwise XML
 
     Returns:
-        Bei Erfolg: Tuple aus (String mit XML oder JSON, Ausgabeformat-Beschreibung)
-        Bei Fehler: (None, None)
+        On success: Tuple of (String with XML or JSON, output format description)
+        On failure: (None, None)
     """
     try:
         nodes, edges = parse_activity_diagram(plantuml_content)
@@ -223,14 +218,13 @@ def process_diagram(
 
 
 def read_plantuml_file(file_path: str) -> Optional[str]:
-    """
-    Liest eine PlantUML-Datei ein und gibt den Inhalt zurück.
+    """Read a PlantUML file and return its content.
 
     Args:
-        file_path: Pfad zur einzulesenden Datei
+        file_path: Path to the file to read
 
     Returns:
-        Inhalt der Datei als String oder None bei Fehler
+        Content of the file as string or None on error
     """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -241,15 +235,14 @@ def read_plantuml_file(file_path: str) -> Optional[str]:
 
 
 def write_output_file(content: str, file_path: str) -> bool:
-    """
-    Schreibt den gegebenen Inhalt in eine Datei.
+    """Write the given content to a file.
 
     Args:
-        content: Zu schreibender Inhalt
-        file_path: Pfad zur Ausgabedatei
+        content: Content to write
+        file_path: Path to the output file
 
     Returns:
-        True bei Erfolg, False bei Fehler
+        True on success, False on error
     """
     try:
         with open(file_path, "w", encoding="utf-8") as f:
@@ -263,16 +256,15 @@ def write_output_file(content: str, file_path: str) -> bool:
 def get_output_file_path(
     input_file: str, output_file: Optional[str], is_json: bool
 ) -> str:
-    """
-    Bestimmt den Pfad zur Ausgabedatei basierend auf Eingabedatei und Ausgabeformat.
+    """Determine output file path based on input file and output format.
 
     Args:
-        input_file: Pfad zur Eingabedatei
-        output_file: Optionaler Pfad zur Ausgabedatei
-        is_json: True wenn JSON-Format, False wenn Draw.io-XML-Format
+        input_file: Path to the input file
+        output_file: Optional path to the output file
+        is_json: True if JSON format, False if Draw.io XML format
 
     Returns:
-        Pfad zur Ausgabedatei
+        Path to the output file
     """
     if output_file:
         return output_file
@@ -283,29 +275,31 @@ def get_output_file_path(
 
 
 def handle_info_request(diagram_type: str) -> None:
-    """
-    Zeigt Informationen über den erkannten Diagrammtyp an.
+    """Display information about the detected diagram type.
 
     Args:
-        diagram_type: Erkannter Diagrammtyp
+        diagram_type: Detected diagram type
     """
     print(f"Diagram type: {diagram_type}")
     if diagram_type == DIAGRAM_TYPE_NOT_PLANTUML:
         print("This does not appear to be a valid PlantUML file.")
     elif diagram_type != DIAGRAM_TYPE_ACTIVITY:
-        print("Note: Currently only activity diagrams are supported for conversion.")
+        print("Note: Currently only activity diagrams are supported " "for conversion.")
 
 
 def main() -> None:
+    """Main function of the program.
+
+    Parses command line arguments, reads PlantUML file,
+    determines diagram type, processes the diagram and
+    writes output to a file.
     """
-    Hauptfunktion des Programms.
-    Parst Kommandozeilenargumente, liest PlantUML-Datei ein,
-    bestimmt den Diagrammtyp, verarbeitet das Diagramm und
-    schreibt die Ausgabe in eine Datei.
-    """
-    # Kommandozeilenargumente parsen
+    # Parse command line arguments
     parser = argparse.ArgumentParser(
-        description="Converts a PlantUML activity diagram to a draw.io XML file or a JSON representation of nodes and edges."
+        description=(
+            "Converts a PlantUML activity diagram to a draw.io XML file "
+            "or a JSON representation of nodes and edges."
+        )
     )
     parser.add_argument("--input", required=True, help="Input PlantUML file")
     parser.add_argument("--output", help="Output file (draw.io XML or JSON)")
@@ -317,51 +311,54 @@ def main() -> None:
     parser.add_argument(
         "--info",
         action="store_true",
-        help="Only display information about the diagram type without converting.",
+        help="Only display information about the diagram type.",
     )
     args = parser.parse_args()
 
-    # Eingabedatei einlesen
+    # Read input file
     plantuml_content = read_plantuml_file(args.input)
     if plantuml_content is None:
         sys.exit(1)
 
-    # Diagrammtyp bestimmen
+    # Determine diagram type
     diagram_type = determine_plantuml_diagram_type(plantuml_content)
 
-    # Nur Informationen anzeigen, falls angefordert
+    # Only show information if requested
     if args.info:
         handle_info_request(diagram_type)
         sys.exit(0)
 
-    # Ausgabedatei bestimmen
+    # Determine output file
     output_file = get_output_file_path(args.input, args.output, args.json)
 
-    # Nicht-Aktivitätsdiagramme behandeln
+    # Handle non-activity diagrams
     if diagram_type != DIAGRAM_TYPE_ACTIVITY:
         if diagram_type == DIAGRAM_TYPE_NOT_PLANTUML:
             print(
-                f"Error: The file '{args.input}' does not appear to be a valid PlantUML file."
+                f"Error: The file '{args.input}' does not appear to be "
+                "a valid PlantUML file."
             )
         else:
             print(
-                f"Error: The file '{args.input}' contains a {diagram_type} diagram. Currently only activity diagrams are supported."
+                f"Error: The file '{args.input}' contains a {diagram_type} "
+                "diagram. Currently only activity diagrams are supported."
             )
         sys.exit(1)
 
-    # Prüfen, ob das Aktivitätsdiagramm gültig ist
+    # Check if activity diagram is valid
     if not is_valid_activity_diagram(plantuml_content):
         print(
-            f"Error: The file '{args.input}' does not contain a valid PlantUML activity diagram."
+            f"Error: The file '{args.input}' does not contain a valid "
+            "PlantUML activity diagram."
         )
         sys.exit(1)
 
-    # Diagramm verarbeiten
+    # Process diagram
     output_content, output_format = process_diagram(plantuml_content, args.json)
     if output_content is None:
         sys.exit(1)
 
-    # Inhalt in Datei schreiben
+    # Write content to file
     if write_output_file(output_content, output_file):
         print(f"{output_format} file successfully created: {output_file}")
     else:
