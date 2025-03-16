@@ -27,7 +27,7 @@ class FileSelectorApp:
         
         # Configure main grid
         self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(3, weight=1)  # Row 3 (main frame) is now dynamically expandable
+        self.root.rowconfigure(3, weight=1)  # Only the main frame (text widget) should expand
 
         # Row 0: Filename label
         self.filename_label = ctk.CTkLabel(
@@ -36,21 +36,31 @@ class FileSelectorApp:
             anchor="w",
             font=("Arial", 14)
         )
-        self.filename_label.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 5))
+        self.filename_label.grid(row=0, column=0, sticky="ew", padx=10, pady=(10, 0))
 
-        # Row 1: Horizontal button frame
-        self.button_frame = ctk.CTkFrame(self.root, fg_color="transparent")
-        self.button_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(5, 5))
+        # Row 1: Diagram type label
+        self.diagram_type_label = ctk.CTkLabel(
+            self.root, 
+            text="Diagramm-Typ: -",
+            anchor="w",
+            font=("Arial", 14)
+        )
+        self.diagram_type_label.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 5))
+
+        # Row 2: Horizontal button frame
+        self.button_frame = ctk.CTkFrame(self.root, fg_color="transparent", height=50)
+        self.button_frame.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 5))
+        self.button_frame.grid_propagate(False)  # Prevent frame from shrinking
         self.button_frame.columnconfigure(0, weight=1)
         self.button_frame.columnconfigure(2, weight=1)
 
         # "Open File" button on the left
         self.file_button = ctk.CTkButton(
             self.button_frame, 
-            text="Datei öffnen", 
+            text="PlantUML-Datei öffnen", 
             command=self.open_file,
             font=("Arial", 14, "bold"),
-            width=120,
+            width=180,  # Increased width to accommodate longer text
             height=40,
             corner_radius=50,
             fg_color="#00759e"
@@ -76,16 +86,7 @@ class FileSelectorApp:
         )
         self.convert_button.grid(row=0, column=2, sticky="e")
 
-        # Row 2: Message label
-        self.message_label = ctk.CTkLabel(
-            self.root, 
-            text="Bitte wählen Sie eine PlantUML-Datei zur Konvertierung aus.",
-            anchor="w",
-            font=("Arial", 14)
-        )
-        self.message_label.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 5))
-
-        # Row 3: Main frame for the text widget
+        # Row 3: Main frame for the text widget (moved from row 4)
         self.main_frame = ctk.CTkFrame(self.root)
         self.main_frame.grid(row=3, column=0, sticky="nsew", padx=10, pady=5)
         self.main_frame.rowconfigure(0, weight=1)
@@ -125,8 +126,9 @@ class FileSelectorApp:
         self.text_widget.bind("<KeyRelease>", lambda event: self.update_text_and_button_state())
         
         # Row 4: Footer with copyright notice
-        self.footer = ctk.CTkFrame(self.root, fg_color="transparent")
-        self.footer.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 10))
+        self.footer = ctk.CTkFrame(self.root, fg_color="transparent", height=30)
+        self.footer.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 5))
+        self.footer.grid_propagate(False)  # Prevent frame from shrinking
         self.footer.columnconfigure(0, weight=1)
         self.copyright_label = ctk.CTkLabel(
             self.footer,
@@ -183,16 +185,20 @@ class FileSelectorApp:
                 # Display file content in the text widget
                 self.text_widget.delete("1.0", "end")
                 self.text_widget.insert("end", content)
+                # Reset diagram type label before checking new content
+                self.diagram_type_label.configure(text="Diagramm-Typ: -")
                 # Syntax-Highlighting anwenden
                 self.apply_syntax_highlighting()
-                # Update button state
+                # Update button state and diagram type
                 self.update_text_and_button_state()
             except Exception as e:
                 self.message_label.configure(text=f"Fehler beim Laden der Datei: {e}")
                 self.convert_button.configure(state="disabled")
+                self.diagram_type_label.configure(text="Diagramm-Typ: -")
         else:
             self.filename_label.configure(text="Keine Datei ausgewählt.")
             self.message_label.configure(text="Bitte wählen Sie eine PlantUML-Datei zur Konvertierung aus.")
+            self.diagram_type_label.configure(text="Diagramm-Typ: -")
             # Reset text widget
             self.text_widget.delete("1.0", "end")
             self.convert_button.configure(state="disabled")
@@ -202,16 +208,16 @@ class FileSelectorApp:
         content = self.text_widget.get("1.0", "end")
         is_valid = is_valid_activity_diagram(content)
         
+        # Update diagram type label
+        if is_valid:
+            self.diagram_type_label.configure(text="Diagramm-Typ: Aktivitätsdiagramm")
+            self.convert_button.configure(state="normal")
+        else:
+            self.diagram_type_label.configure(text="Diagramm-Typ: Unbekannt")
+            self.convert_button.configure(state="disabled")
+        
         # Apply syntax highlighting
         self.apply_syntax_highlighting()
-        
-        # Update Convert button state
-        if is_valid:
-            self.convert_button.configure(state="normal")
-            self.message_label.configure(text="Gültiges PlantUML-Aktivitätsdiagramm.")
-        else:
-            self.convert_button.configure(state="disabled")
-            self.message_label.configure(text="Ungültiges PlantUML-Aktivitätsdiagramm. Konvertierung deaktiviert.")
 
     def apply_syntax_highlighting(self):
         """Wendet Syntax-Highlighting auf den PlantUML-Code im Textfeld an."""
