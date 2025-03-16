@@ -1,0 +1,14 @@
+include LICENSE
+include README.md
+include requirements.txt
+include requirements-dev.txt
+
+recursive-include src/plantuml2drawio py.typed
+recursive-include tests *.py
+recursive-include docs *.rst *.py *.bat *.txt *.html *.css *.js
+recursive-include examples *
+recursive-include resources *
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[cod]
+recursive-exclude * .DS_Store
