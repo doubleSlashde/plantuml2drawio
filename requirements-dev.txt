@@ -18,8 +18,6 @@ pre-commit>=3.6.2
 sphinx>=7.2.6
 sphinx-rtd-theme>=2.0.0
 
-sphinx-rtd-theme==2.0.0
-
 from plantuml2drawio.logging_config import setup_logging
 
 setup_logging(
