@@ -1,0 +1,25 @@
+@startuml Activity with Multiline
+start
+
+:This is a single line activity;
+
+:This is
+a multiline
+activity with
+several lines;
+
+:Another activity
+with two lines;
+
+if (Multiline condition?
+with two lines) then (yes)
+  :Processing
+  data;
+else (no)
+  :Skip
+  processing
+  task;
+endif
+
+stop
+@enduml

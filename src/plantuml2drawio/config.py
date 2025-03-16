@@ -11,6 +11,8 @@ VERSION_DATE = "2025-03-16"
 # File formats and extensions
 DEFAULT_JSON_EXT = ".json"
 DEFAULT_DRAWIO_EXT = ".drawio"
+FILE_EXTENSION_PUML = ".puml"
+FILE_EXTENSION_DRAWIO = ".drawio"
 
 # Output formats
 OUTPUT_FORMAT_JSON = "JSON"
@@ -23,6 +25,7 @@ DIAGRAM_TYPE_CLASS = "class"
 DIAGRAM_TYPE_COMPONENT = "component"
 DIAGRAM_TYPE_USECASE = "usecase"
 DIAGRAM_TYPE_UNKNOWN = "unknown"
+DIAGRAM_TYPE_NOT_PLANTUML = "not_plantuml"
 
 # Layout settings
 DEFAULT_VERTICAL_SPACING = 100
@@ -33,7 +36,7 @@ DEFAULT_START_Y = 60
 # Application settings
 DEFAULT_WINDOW_WIDTH = 800
 DEFAULT_WINDOW_HEIGHT = 600
-DEFAULT_WINDOW_TITLE = "PlantUML zu Draw.io Konverter"
+DEFAULT_WINDOW_TITLE = "PlantUML to Draw.io Converter"
 
 # Resources
 # Icon path without extension, will be added based on platform

@@ -1,0 +1,20 @@
+@startuml Activity Detached Example
+start
+:Initialize;
+
+floating note left: This is a detached process
+:Process A;
+note right: This can run independently
+
+:Process B;
+detach
+
+:Main Process Continues;
+:Finalize;
+stop
+
+note right: Detached process continuing
+:Process A Continued;
+:Process A Finalized;
+stop
+@enduml

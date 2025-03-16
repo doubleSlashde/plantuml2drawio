@@ -208,4 +208,4 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe die [LICENSE](LICENSE
 
 <p align="center">
   Erstellt mit ❤️ für UML-Enthusiasten und Softwareentwickler
-</p> 
+</p>

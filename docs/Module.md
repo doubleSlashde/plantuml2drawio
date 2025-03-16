@@ -141,4 +141,4 @@ Um einen neuen Diagrammtyp zu unterstützen:
 2. Implementieren der abstrakten Methoden für den neuen Diagrammtyp
 3. Aktualisieren von `core.py`, um das neue Modul für den entsprechenden Diagrammtyp zu verwenden
 
-Dank der modularen Architektur sind keine größeren Änderungen am bestehenden Code nötig. 
+Dank der modularen Architektur sind keine größeren Änderungen am bestehenden Code nötig.

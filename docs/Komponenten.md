@@ -10,25 +10,25 @@ package "PlantUML zu Draw.io Konverter" {
     [Konvertierungssteuerung]
     [CLI-Interface]
   }
-  
+
   component "src/plantuml2drawio/app.py" as gui {
     [GUI-Interface]
     [Datei-Operationen]
     [Benutzerinteraktion]
   }
-  
+
   component "src/processors/activity_processor.py" as activity {
     [Aktivitätsdiagramm-Parser]
     [Layout-Berechnung]
     [Draw.io-XML-Generator]
   }
-  
+
   component "src/processors/base_processor.py" as base {
     [Basis-Klassen]
     [Gemeinsame Funktionen]
     [Abstrakte Methoden]
   }
-  
+
   gui --> core : verwendet
   core --> activity : verwendet
   activity --> base : erbt von
@@ -77,4 +77,4 @@ Das Diagramm veranschaulicht die klare Trennung der Verantwortlichkeiten zwische
 - **src/processors/activity_processor.py** konzentriert sich ausschließlich auf Aktivitätsdiagramme
 - **src/plantuml2drawio/app.py** behandelt nur UI-bezogene Aspekte
 
-Diese Architektur erleichtert die zukünftige Erweiterung um weitere Diagrammtypen. Neue Prozessoren können als separate Module hinzugefügt werden, ohne bestehenden Code zu verändern. 
+Diese Architektur erleichtert die zukünftige Erweiterung um weitere Diagrammtypen. Neue Prozessoren können als separate Module hinzugefügt werden, ohne bestehenden Code zu verändern.

@@ -1,0 +1,8 @@
+[flake8]
+max-line-length = 88
+extend-ignore = E203
+per-file-ignores =
+    # Ignore unused imports in __init__.py files
+    __init__.py: F401
+    # Ignore line length in test files
+    tests/*: E501

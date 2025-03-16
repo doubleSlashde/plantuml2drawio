@@ -183,4 +183,4 @@ Bei Fragen oder Problemen:
 
 1. Prüfen Sie die FAQ im [Wiki](https://github.com/[username]/plantuml2drawio/wiki)
 2. Eröffnen Sie ein [GitHub Issue](https://github.com/[username]/plantuml2drawio/issues)
-3. Kontaktieren Sie den Entwickler: [email@example.com] 
+3. Kontaktieren Sie den Entwickler: [email@example.com]

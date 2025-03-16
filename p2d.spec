@@ -42,4 +42,4 @@ app = BUNDLE(
     name='p2d.app',
     icon='resources/icons/p2d_icon.icns',
     bundle_identifier=None,
-) 
+)

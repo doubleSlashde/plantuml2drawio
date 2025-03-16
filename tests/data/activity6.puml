@@ -1,0 +1,22 @@
+@startuml Activity Swimlanes Example
+|User|
+start
+:Request Data;
+|#AntiqueWhite|System|
+:Validate Request;
+if (Valid Request?) then (yes)
+  :Query Database;
+  :Process Results;
+else (no)
+  :Return Error;
+  stop
+endif
+|User|
+:Receive Data;
+:Display Results;
+|Manager|
+:Review Usage;
+|System|
+:Log Activity;
+stop
+@enduml

@@ -9,7 +9,8 @@ import unittest
 # Füge das src-Verzeichnis zum Pythonpfad hinzu
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.plantuml2drawio.core import determine_plantuml_diagram_type
+# Import processors first to ensure registry is initialized
+from src.plantuml2drawio.processors import ProcessorRegistry
 from src.plantuml2drawio.processors.activity_processor import \
     is_valid_activity_diagram
 
@@ -34,7 +35,7 @@ class TestDiagramTypeDetection(unittest.TestCase):
         @enduml
         """
 
-        diagram_type = determine_plantuml_diagram_type(plantuml_content)
+        diagram_type, _ = ProcessorRegistry.detect_diagram_type(plantuml_content)
         self.assertEqual(diagram_type, "activity")
 
         # Überprüfe auch die direkte is_valid_activity_diagram Funktion
@@ -49,7 +50,7 @@ class TestDiagramTypeDetection(unittest.TestCase):
         Es enthält keine Start/End-Tags.
         """
 
-        diagram_type = determine_plantuml_diagram_type(plantuml_content)
+        diagram_type, _ = ProcessorRegistry.detect_diagram_type(plantuml_content)
         self.assertEqual(diagram_type, "not_plantuml")
 
         # Überprüfe auch die direkte is_valid_activity_diagram Funktion
@@ -60,7 +61,7 @@ class TestDiagramTypeDetection(unittest.TestCase):
         """Test, ob ein leeres Diagramm korrekt erkannt wird."""
         plantuml_content = ""
 
-        diagram_type = determine_plantuml_diagram_type(plantuml_content)
+        diagram_type, _ = ProcessorRegistry.detect_diagram_type(plantuml_content)
         self.assertEqual(diagram_type, "not_plantuml")
 
     def test_minimal_activity_diagram(self):
@@ -73,7 +74,7 @@ class TestDiagramTypeDetection(unittest.TestCase):
         @enduml
         """
 
-        diagram_type = determine_plantuml_diagram_type(plantuml_content)
+        diagram_type, _ = ProcessorRegistry.detect_diagram_type(plantuml_content)
         self.assertEqual(diagram_type, "activity")
 
         is_valid = is_valid_activity_diagram(plantuml_content)

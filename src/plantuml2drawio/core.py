@@ -1,189 +1,17 @@
-"""Core functionality for converting PlantUML diagrams to Draw.io format.
+"""Core functionality for PlantUML to Draw.io conversion."""
 
-This module provides the main conversion logic and utilities for transforming
-PlantUML diagram specifications into Draw.io compatible XML format.
-"""
-
-#!/usr/bin/env python3
 import argparse
 import os
 import re
 import sys
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Optional, Tuple
 
-from plantuml2drawio.config import (DIAGRAM_TYPE_ACTIVITY, DIAGRAM_TYPE_CLASS,
-                                    DIAGRAM_TYPE_SEQUENCE,
-                                    DIAGRAM_TYPE_UNKNOWN,
-                                    FILE_EXTENSION_DRAWIO)
-from plantuml2drawio.processors.activity_processor import (
-    Edge, Node, create_activity_drawio_xml, create_json,
-    is_valid_activity_diagram, layout_activity_diagram, parse_activity_diagram)
-
-# Constants
-OUTPUT_FORMAT_JSON = "JSON"
-OUTPUT_FORMAT_XML = "Draw.io XML"
-DEFAULT_JSON_EXT = ".json"
-DEFAULT_DRAWIO_EXT = ".drawio"
-DIAGRAM_TYPE_NOT_PLANTUML = "not_plantuml"
-
-# Predefined regex patterns for better performance
-RE_ACTIVITY = re.compile(r"^\s*@startuml\s*\n.*?activity\s*\n.*?@enduml\s*$", re.DOTALL)
-RE_SEQUENCE = re.compile(r"^\s*@startuml\s*\n.*?sequence\s*\n.*?@enduml\s*$", re.DOTALL)
-RE_CLASS = re.compile(r"^\s*@startuml\s*\n.*?class\s*\n.*?@enduml\s*$", re.DOTALL)
-RE_IF_BLOCK = re.compile(r"if\s*\(.+?\).+?endif", re.DOTALL | re.IGNORECASE)
-RE_SEQUENCE_ARROW = re.compile(r"[^\s]+\s*[-=]+>|<[-=]+\s*[^\s]+")
-RE_CLASS_RELATION = re.compile(
-    r"[^\s]+\s*[<\-o\*\+\^\.#\}]+\-\-+[<\-o\*\+\^\.#\}]*\s*[^\s]+"
-)
-RE_CLASS_DEF = re.compile(r"class\s+[\w\"]+|interface\s+[\w\"]+|enum\s+[\w\"]+")
-RE_USECASE = re.compile(r"\([^\)]+\)|usecase\s+[\w\"]+")
-RE_ACTOR = re.compile(r":[^\:]+:|actor\s+[\w\"]+")
-RE_COMPONENT = re.compile(r"component\s+[\w\"]+|\[[^\]]+\]")
-RE_STATE = re.compile(r"state\s+[\w\"]+")
-RE_OBJECT = re.compile(r"object\s+[\w\"]+")
-RE_ENTITY = re.compile(r"entity\s+[\w\"]+")
-RE_NODE = re.compile(r"node\s+[\w\"]+")
-RE_PACKAGE = re.compile(r"package\s+[\w\"]+")
-
-
-def determine_plantuml_diagram_type(plantuml_content: str) -> str:
-    """Determine the type of PlantUML diagram based on its content.
-
-    Supported diagram types:
-    - Activity diagram
-    - Sequence diagram
-    - Class diagram
-    - Use case diagram
-    - Component diagram
-    - State diagram
-    - Object diagram
-    - Entity-relationship diagram (ERD)
-    - Deployment diagram
-    - And others (fallback)
-
-    Args:
-        plantuml_content: String containing the PlantUML diagram code
-
-    Returns:
-        String indicating the diagram type
-    """
-    # First, check if content is a valid PlantUML file
-    if "@startuml" not in plantuml_content or "@enduml" not in plantuml_content:
-        return DIAGRAM_TYPE_NOT_PLANTUML
-
-    # Convert to lowercase for easier keyword detection
-    content_lower = plantuml_content.lower()
-
-    # Activity diagram detection
-    activity_indicators = 0
-    if "start" in content_lower and "stop" in content_lower:
-        activity_indicators += 2
-    if RE_ACTIVITY.search(plantuml_content):
-        activity_indicators += 1
-    if RE_IF_BLOCK.search(plantuml_content):
-        activity_indicators += 1
-
-    # Sequence diagram detection
-    sequence_indicators = 0
-    if RE_SEQUENCE.search(plantuml_content):
-        sequence_indicators += 1  # Reduced weight as this can appear in other diagrams
-    if (
-        "participant" in content_lower
-        or "actor" in content_lower
-        and "->" in plantuml_content
-    ):
-        sequence_indicators += 1
-    if "activate" in content_lower or "deactivate" in content_lower:
-        sequence_indicators += 2  # Increased weight for sequence-specific keywords
-
-    # Class diagram detection
-    class_indicators = 0
-    if RE_CLASS.search(plantuml_content):
-        class_indicators += 2
-    if RE_CLASS_RELATION.search(plantuml_content):
-        class_indicators += 1
-    if (
-        "abstract" in content_lower
-        or "static" in content_lower
-        or "private" in content_lower
-    ):
-        class_indicators += 1
-    if "extends" in content_lower or "implements" in content_lower:
-        class_indicators += 1
-
-    # Use case diagram detection
-    usecase_indicators = 0
-    if RE_USECASE.search(plantuml_content):
-        usecase_indicators += 2
-    if RE_ACTOR.search(plantuml_content):
-        usecase_indicators += 2
-
-    # Component diagram detection
-    component_indicators = 0
-    if RE_COMPONENT.search(plantuml_content):
-        component_indicators += 2  # Adjusted weight
-    if (
-        "interface" in content_lower
-        and "[" in plantuml_content
-        and "]" in plantuml_content
-    ):
-        component_indicators += 1
-    if RE_PACKAGE.search(plantuml_content) and not RE_STATE.search(plantuml_content):
-        component_indicators += 1  # Packages are common in component diagrams
-    if "database" in content_lower or "queue" in content_lower:
-        component_indicators += 1  # Common in component diagrams
-
-    # State diagram detection
-    state_indicators = 0
-    if RE_STATE.search(plantuml_content):
-        state_indicators += 3  # Increased weight for state keyword
-    if "[*]" in plantuml_content:  # Start/end state notation
-        state_indicators += 2
-    if "state" in content_lower and "{" in plantuml_content and "}" in plantuml_content:
-        state_indicators += 1  # Nested states are common
-
-    # Object diagram detection
-    object_indicators = 0
-    if RE_OBJECT.search(plantuml_content):
-        object_indicators += 2
-
-    # Entity-relationship diagram detection (ERD)
-    erd_indicators = 0
-    if RE_ENTITY.search(plantuml_content):
-        erd_indicators += 2
-    if "entity" in content_lower and (
-        "||--o{" in plantuml_content or "*--" in plantuml_content
-    ):
-        erd_indicators += 1
-
-    # Deployment diagram detection
-    deployment_indicators = 0
-    if RE_NODE.search(plantuml_content):
-        deployment_indicators += 2
-
-    # Determine the diagram type based on the highest indicator count
-    indicators = {
-        DIAGRAM_TYPE_ACTIVITY: activity_indicators,
-        DIAGRAM_TYPE_SEQUENCE: sequence_indicators,
-        DIAGRAM_TYPE_CLASS: class_indicators,
-        "usecase": usecase_indicators,
-        "component": component_indicators,
-        "state": state_indicators,
-        "object": object_indicators,
-        "erd": erd_indicators,
-        "deployment": deployment_indicators,
-    }
-
-    # Find the diagram type with the highest indicator count
-    max_indicators = 0
-    diagram_type = "unknown"
-
-    for dtype, count in indicators.items():
-        if count > max_indicators:
-            max_indicators = count
-            diagram_type = dtype
-
-    return diagram_type
+from plantuml2drawio.config import (DEFAULT_DRAWIO_EXT, DEFAULT_JSON_EXT,
+                                    DIAGRAM_TYPE_ACTIVITY,
+                                    DIAGRAM_TYPE_NOT_PLANTUML,
+                                    FILE_EXTENSION_PUML, OUTPUT_FORMAT_JSON,
+                                    OUTPUT_FORMAT_XML)
+from plantuml2drawio.processors import ProcessorRegistry
 
 
 def process_diagram(
@@ -199,16 +27,34 @@ def process_diagram(
         On success: Tuple of (String with XML or JSON, output format description)
         On failure: (None, None)
     """
-    try:
-        nodes, edges = parse_activity_diagram(plantuml_content)
-        layout_activity_diagram(nodes, edges)
+    if not plantuml_content:
+        print("Error: Empty PlantUML content")
+        return None, None
 
+    # Determine diagram type
+    diagram_type, processor_class = ProcessorRegistry.detect_diagram_type(
+        plantuml_content
+    )
+    if not processor_class:
+        print(f"Error: Unsupported diagram type: {diagram_type}")
+        return None, None
+
+    # Create processor instance
+    processor = processor_class()
+
+    # Check if diagram is valid
+    if not processor.is_valid_diagram(plantuml_content):
+        print(f"Error: Invalid {diagram_type} diagram")
+        return None, None
+
+    try:
+        # Process the diagram
         output_format = OUTPUT_FORMAT_JSON if output_json else OUTPUT_FORMAT_XML
 
         if output_json:
-            output_content = create_json(nodes, edges)
+            output_content = processor.convert_to_json(plantuml_content)
         else:
-            output_content = create_activity_drawio_xml(nodes, edges)
+            output_content = processor.convert_to_drawio(plantuml_content)
 
         return output_content, output_format
 
@@ -226,11 +72,25 @@ def read_plantuml_file(file_path: str) -> Optional[str]:
     Returns:
         Content of the file as string or None on error
     """
+    if not os.path.exists(file_path):
+        print(f"Error: File '{file_path}' does not exist")
+        return None
+
+    if not file_path.lower().endswith(FILE_EXTENSION_PUML):
+        print(f"Warning: File '{file_path}' does not have the .puml extension")
+
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
+            content = f.read()
+            if not content.strip():
+                print(f"Error: File '{file_path}' is empty")
+                return None
+            return content
     except IOError as e:
         print(f"Error reading input file '{file_path}': {e}")
+        return None
+    except UnicodeDecodeError as e:
+        print(f"Error: File '{file_path}' is not a valid UTF-8 encoded text file: {e}")
         return None
 
 
@@ -284,7 +144,7 @@ def handle_info_request(diagram_type: str) -> None:
     if diagram_type == DIAGRAM_TYPE_NOT_PLANTUML:
         print("This does not appear to be a valid PlantUML file.")
     elif diagram_type != DIAGRAM_TYPE_ACTIVITY:
-        print("Note: Currently only activity diagrams are supported " "for conversion.")
+        print("Note: Currently only activity diagrams are supported for conversion.")
 
 
 def main() -> None:
@@ -297,7 +157,7 @@ def main() -> None:
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         description=(
-            "Converts a PlantUML activity diagram to a draw.io XML file "
+            "Converts a PlantUML diagram to a draw.io XML file "
             "or a JSON representation of nodes and edges."
         )
     )
@@ -321,7 +181,7 @@ def main() -> None:
         sys.exit(1)
 
     # Determine diagram type
-    diagram_type = determine_plantuml_diagram_type(plantuml_content)
+    diagram_type, _ = ProcessorRegistry.detect_diagram_type(plantuml_content)
 
     # Only show information if requested
     if args.info:
@@ -330,28 +190,6 @@ def main() -> None:
 
     # Determine output file
     output_file = get_output_file_path(args.input, args.output, args.json)
-
-    # Handle non-activity diagrams
-    if diagram_type != DIAGRAM_TYPE_ACTIVITY:
-        if diagram_type == DIAGRAM_TYPE_NOT_PLANTUML:
-            print(
-                f"Error: The file '{args.input}' does not appear to be "
-                "a valid PlantUML file."
-            )
-        else:
-            print(
-                f"Error: The file '{args.input}' contains a {diagram_type} "
-                "diagram. Currently only activity diagrams are supported."
-            )
-        sys.exit(1)
-
-    # Check if activity diagram is valid
-    if not is_valid_activity_diagram(plantuml_content):
-        print(
-            f"Error: The file '{args.input}' does not contain a valid "
-            "PlantUML activity diagram."
-        )
-        sys.exit(1)
 
     # Process diagram
     output_content, output_format = process_diagram(plantuml_content, args.json)

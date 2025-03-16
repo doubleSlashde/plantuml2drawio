@@ -1,0 +1,30 @@
+@startuml Activity Complex Example
+start
+
+:Initialize Process;
+:Load Configuration;
+while (More data available?) is (yes)
+  :Process Data Chunk;
+  if (Validation OK?) then (yes)
+    :Save Results;
+  else (no)
+    :Log Error;
+    :Skip to Next Chunk;
+  endif
+endwhile (no)
+
+:Generate Report;
+if (Report Size > Threshold?) then (yes)
+  fork
+    :Send Email Notification;
+  fork again
+    :Compress Report;
+    :Store in Archive;
+  end fork
+else (no)
+  :Store Report Directly;
+endif
+
+:Finalize Process;
+stop
+@enduml

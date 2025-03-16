@@ -233,4 +233,4 @@ Um einen neuen Diagrammtyp zu unterstützen, sind folgende Schritte erforderlich
 
 5. **Testen des neuen Diagrammtyps**:
    - Erstellen Sie Testfälle in `tests/`
-   - Fügen Sie Beispiele in `examples/` hinzu 
+   - Fügen Sie Beispiele in `examples/` hinzu

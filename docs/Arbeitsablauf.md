@@ -99,7 +99,7 @@ Der entsprechende Prozessor extrahiert die Struktur des Diagramms:
 ### 6. Erstellung der Ausgabe
 
 - **Verantwortliches Modul:** modules/activity_processor.py
-- **Funktionen:** 
+- **Funktionen:**
   - `create_activity_drawio_xml(nodes, edges)` für Draw.io-XML
   - `create_json(nodes, edges)` für JSON-Format
 - **Beschreibung:**
@@ -110,7 +110,7 @@ Der entsprechende Prozessor extrahiert die Struktur des Diagramms:
 ### 7. Speichern der Ausgabedatei
 
 - **Verantwortliches Modul:** src/plantuml2drawio/core.py oder src/plantuml2drawio/app.py (je nach Schnittstelle)
-- **Funktion:** 
+- **Funktion:**
   - CLI: `write_output_file(content, file_path)`
   - GUI: Dateiauswahldialog in `convert_to_drawio()`
 - **Beschreibung:**
@@ -154,4 +154,4 @@ stop
 @enduml
 ```
 
-Wird konvertiert in eine Draw.io-XML-Datei, die in Draw.io geöffnet werden kann und das Diagramm mit denselben Elementen und Verbindungen darstellt, jedoch mit dem Draw.io-eigenen Darstellungsstil. 
+Wird konvertiert in eine Draw.io-XML-Datei, die in Draw.io geöffnet werden kann und das Diagramm mit denselben Elementen und Verbindungen darstellt, jedoch mit dem Draw.io-eigenen Darstellungsstil.

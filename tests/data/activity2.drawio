@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2023-01-01T00:00:00.000Z" agent="PlantUML2Drawio" version="14.6.13">
+  <diagram id="activity_diagram" name="Activity Diagram">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="10" value="Start" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;fontColor=#ffffff;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="330.0" y="100" width="40" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="11" value="Stop" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#000000;fontColor=#ffffff;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="530.0" y="1380" width="40" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="12" value="Start des Prozesses" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E9F4;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="283.5" y="240" width="133" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="13" value="Aktion 1 ausführen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E9F4;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="287.0" y="380" width="126" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="14" value="Aktion 2 ausführen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E9F4;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="287.0" y="520" width="126" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="15" value="Aktion 3 ausführen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E9F4;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="287.0" y="660" width="126" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="16" value="Prozess beenden" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E9F4;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="290.0" y="800" width="120" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="17" value="Bedingung erfüllt?" style="shape=hexagon;perimeter=hexagonPerimeter2;size=0.05;whiteSpace=wrap;html=1;fillColor=#00A5E1;fontColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="290.0" y="940" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="18" value="Aktion 1 ausführen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E9F4;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="467.0" y="1100" width="126" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="19" value="Aktion 2 ausführen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E9F4;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="107.0" y="1100" width="126" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="20" value="" style="rhombus;whiteSpace=wrap;html=1;fillColor=#00A5E1;fontColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="520.0" y="1240" width="40" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="1000" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="10" target="12">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1001" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="12" target="13">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1002" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="13" target="14">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1003" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="14" target="15">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1004" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="15" target="16">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1005" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="16" target="17">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1006" value="Ja" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="17" target="18">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1007" value="Nein" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="17" target="19">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1008" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="18" target="20">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1009" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="19" target="20">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="1010" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;strokeColor=#000000;" edge="1" parent="1" source="20" target="11">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

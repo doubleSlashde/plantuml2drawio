@@ -121,4 +121,4 @@ note right of ComponentProcessor: Geplante Erweiterung
 @enduml
 ```
 
-Jedes neue Diagrammtyp-Modul wird dabei ein ähnliches Interface implementieren, wodurch die Erweiterbarkeit des Systems sichergestellt wird. 
+Jedes neue Diagrammtyp-Modul wird dabei ein ähnliches Interface implementieren, wodurch die Erweiterbarkeit des Systems sichergestellt wird.
