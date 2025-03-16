@@ -1,4 +1,6 @@
-from setuptools import setup, find_packages
+"""Setup script for the plantuml2drawio package."""
+
+from setuptools import find_packages, setup
 
 setup(
     name="plantuml2drawio",
@@ -10,8 +12,8 @@ setup(
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     install_requires=[
-        "customtkinter==5.2.2",
-        "pillow==10.2.0",
+        "customtkinter>=5.2.3",
+        "pillow>=10.3.0",
         # pyinstaller is only needed for creating the executable and should not
         # be installed as a direct dependency
     ],
@@ -33,4 +35,4 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
-) 
+)
