@@ -41,42 +41,50 @@ stop
 
 ### 1. Einlesen des PlantUML-Codes
 
-- **Verantwortliches Modul:** p2dcore.py
-- **Funktion:** `read_plantuml_file(file_path)`
-- **Beschreibung:** 
-  - Die Eingabedatei wird geöffnet und der Inhalt als Text gelesen
-  - Der Unicode-Zeichensatz (UTF-8) wird verwendet, um auch Sonderzeichen zu unterstützen
-  - Bei Fehlern während des Lesevorgangs wird eine entsprechende Fehlermeldung ausgegeben
+Der Benutzer kann ein PlantUML-Diagramm auf zwei Arten eingeben:
+
+1. **Über die Kommandozeile**:
+   ```bash
+   ./p2d-cli --input diagram.puml --output diagram.drawio
+   ```
+
+2. **Über die grafische Benutzeroberfläche**:
+   - Starten der GUI mit `./p2d-gui`
+   - Eingabe des PlantUML-Codes im Textfeld oder
+   - Laden einer PlantUML-Datei über "Datei öffnen"
+
+- **Verantwortliches Modul:** src/plantuml2drawio/core.py oder src/plantuml2drawio/app.py (je nach Schnittstelle)
 
 ### 2. Erkennung des Diagrammtyps
 
-- **Verantwortliches Modul:** p2dcore.py
-- **Funktion:** `determine_plantuml_diagram_type(plantuml_content)`
-- **Beschreibung:**
-  - Der PlantUML-Code wird analysiert, um den Diagrammtyp zu bestimmen
-  - Verschiedene Indikatoren im Code werden geprüft (Keywords, Syntax-Elemente, etc.)
-  - Der Diagrammtyp mit der höchsten Übereinstimmung wird zurückgegeben
-  - Bei fehlendem @startuml/@enduml wird "not_plantuml" zurückgegeben
+Das System analysiert den PlantUML-Code und erkennt den Diagrammtyp:
 
-### 3. Validierung des Aktivitätsdiagramms
+1. Suche nach charakteristischen Schlüsselwörtern und Strukturen
+2. Validierung des Diagramms gegen bekannte Muster
+3. Auswahl des entsprechenden Prozessors für den erkannten Typ
 
-- **Verantwortliches Modul:** modules/activity_processor.py
+- **Verantwortliches Modul:** src/plantuml2drawio/core.py
+
+### 3. Parsing des PlantUML-Codes
+
+Der entsprechende Prozessor extrahiert die Struktur des Diagramms:
+
+1. Zerlegung des PlantUML-Codes in seine Bestandteile
+2. Identifikation von Knoten (Aktivitäten, Entscheidungen, Start/Ende)
+3. Identifikation von Kanten (Verbindungen zwischen Knoten)
+4. Extraktion von Beschriftungen und Eigenschaften
+
+- **Verantwortliches Modul:** src/processors/activity_processor.py
+
+### 4. Validierung des Aktivitätsdiagramms
+
+- **Verantwortliches Modul:** src/processors/activity_processor.py
 - **Funktion:** `is_valid_activity_diagram(plantuml_content)`
 - **Beschreibung:**
   - Überprüfung auf erforderliche Elemente eines Aktivitätsdiagramms
   - Prüfung auf PlantUML-Markierungen (@startuml, @enduml)
   - Prüfung auf grundlegende Elemente (start, stop)
   - Prüfung auf Aktivitätszeilen oder if-Blöcke
-
-### 4. Parsing des Aktivitätsdiagramms
-
-- **Verantwortliches Modul:** modules/activity_processor.py
-- **Funktion:** `parse_activity_diagram(plantuml_content)`
-- **Beschreibung:**
-  - Zeilenweise Analyse des PlantUML-Codes
-  - Identifikation von Knoten (Start, Stop, Aktivitäten, Bedingungen)
-  - Identifikation von Kanten (Verbindungen zwischen Knoten)
-  - Erstellung einer internen Repräsentation als Listen von Node- und Edge-Objekten
 
 ### 5. Berechnung des Layouts
 
@@ -101,7 +109,7 @@ stop
 
 ### 7. Speichern der Ausgabedatei
 
-- **Verantwortliches Modul:** p2dcore.py oder p2dapp.py (je nach Schnittstelle)
+- **Verantwortliches Modul:** src/plantuml2drawio/core.py oder src/plantuml2drawio/app.py (je nach Schnittstelle)
 - **Funktion:** 
   - CLI: `write_output_file(content, file_path)`
   - GUI: Dateiauswahldialog in `convert_to_drawio()`

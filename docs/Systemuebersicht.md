@@ -8,7 +8,7 @@ Der PlantUML zu Draw.io Konverter ermöglicht die Umwandlung von PlantUML-Diagra
 
 Die Anwendung ist modular aufgebaut und folgt dem Prinzip der Trennung von Verantwortlichkeiten. Die wichtigsten Komponenten sind:
 
-1. **Kernmodul (p2dcore.py)**: 
+1. **Kernmodul (core.py)**: 
    - Hauptmodul, das die Diagrammtyperkennung und die Orchestrierung des Konvertierungsprozesses übernimmt
    - Bietet eine Kommandozeilenschnittstelle zur direkten Verwendung
    - Implementiert die Logik zur Erkennung verschiedener PlantUML-Diagrammtypen
@@ -18,7 +18,7 @@ Die Anwendung ist modular aufgebaut und folgt dem Prinzip der Trennung von Veran
    - Enthält Funktionen zur Validierung, Parsing, Layout und Konvertierung von Aktivitätsdiagrammen
    - Separiert, um die Erweiterbarkeit für andere Diagrammtypen zu gewährleisten
 
-3. **Benutzeroberfläche (p2dapp.py)**:
+3. **Benutzeroberfläche (app.py)**:
    - Graphische Benutzeroberfläche (GUI) für den Konverter
    - Ermöglicht das Laden, Bearbeiten und Konvertieren von PlantUML-Diagrammen
    - Bietet Syntax-Highlighting für PlantUML-Code

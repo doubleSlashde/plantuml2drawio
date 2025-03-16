@@ -3,73 +3,78 @@
 Das folgende Komponentendiagramm zeigt die Hauptmodule des PlantUML zu Draw.io Konverters und ihre Abhängigkeiten:
 
 ```plantuml
-@startuml Komponentendiagramm
-
-!define LIGHTBLUE
-!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
-
-' Komponenten
-component "p2dcore.py" as core {
-  component "Diagrammtyperkennung" as typeDetection
-  component "Prozesssteuerung" as processControl
-  component "CLI" as cli
+@startuml
+package "PlantUML zu Draw.io Konverter" {
+  component "src/plantuml2drawio/core.py" as core {
+    [Diagrammtyp-Erkennung]
+    [Konvertierungssteuerung]
+    [CLI-Interface]
+  }
+  
+  component "src/plantuml2drawio/app.py" as gui {
+    [GUI-Interface]
+    [Datei-Operationen]
+    [Benutzerinteraktion]
+  }
+  
+  component "src/processors/activity_processor.py" as activity {
+    [Aktivitätsdiagramm-Parser]
+    [Layout-Berechnung]
+    [Draw.io-XML-Generator]
+  }
+  
+  component "src/processors/base_processor.py" as base {
+    [Basis-Klassen]
+    [Gemeinsame Funktionen]
+    [Abstrakte Methoden]
+  }
+  
+  gui --> core : verwendet
+  core --> activity : verwendet
+  activity --> base : erbt von
 }
-
-component "modules/activity_processor.py" as activity {
-  component "Aktivitätsdiagramm Validierung" as activityValidation
-  component "Parsing" as activityParsing
-  component "Layout" as activityLayout
-  component "XML/JSON Generierung" as activityExport
-}
-
-component "p2dapp.py" as gui {
-  component "GUI" as guiComponent
-  component "Syntax-Highlighting" as syntaxHighlight
-  component "Dateihandling" as fileHandling
-}
-
-' Abhängigkeiten zwischen Hauptkomponenten
-core --> activity : importiert
-gui --> activity : importiert
-
-' Interne Abhängigkeiten
-typeDetection --> processControl
-processControl --> cli
-activityValidation --> activityParsing
-activityParsing --> activityLayout
-activityLayout --> activityExport
-guiComponent --> syntaxHighlight
-guiComponent --> fileHandling
-
 @enduml
 ```
 
-## Beschreibung der Komponenten
+## Hauptkomponenten
 
-### Hauptmodule
+1. **src/plantuml2drawio/core.py**
+   - Kernkomponente des Systems
+   - Steuert den Konvertierungsprozess
+   - Bietet die Kommandozeilenschnittstelle
+   - Erkennt den Diagrammtyp
+   - Koordiniert die Verarbeitung
 
-1. **p2dcore.py**
-   - **Diagrammtyperkennung**: Analysiert PlantUML-Code, um den Diagrammtyp zu identifizieren
-   - **Prozesssteuerung**: Koordiniert den Konvertierungsprozess
-   - **CLI**: Stellt eine Kommandozeilenschnittstelle bereit
+2. **src/processors/activity_processor.py**
+   - Spezialisierte Komponente für Aktivitätsdiagramme
+   - Parst PlantUML-Aktivitätsdiagramme
+   - Berechnet das Layout
+   - Generiert das Draw.io-XML
 
-2. **modules/activity_processor.py**
-   - **Aktivitätsdiagramm Validierung**: Prüft, ob ein gültiges Aktivitätsdiagramm vorliegt
-   - **Parsing**: Wandelt PlantUML-Code in eine interne Datenstruktur um
-   - **Layout**: Berechnet optimale Positionen für Diagrammelemente
-   - **XML/JSON Generierung**: Erzeugt DrawIO-XML oder JSON aus der internen Datenstruktur
+3. **src/plantuml2drawio/app.py**
+   - Grafische Benutzeroberfläche
+   - Bietet Dateioperationen
+   - Visualisiert den Konvertierungsprozess
+   - Zeigt Ergebnisse und Fehler an
 
-3. **p2dapp.py**
-   - **GUI**: Grafische Benutzeroberfläche
-   - **Syntax-Highlighting**: Farbliche Hervorhebung von PlantUML-Code
-   - **Dateihandling**: Funktionen zum Laden und Speichern von Dateien
+4. **src/processors/base_processor.py**
+   - Basisklasse für alle Diagramm-Prozessoren
+   - Definiert die gemeinsame Schnittstelle
+   - Stellt Basis-Klassen für Diagrammelemente bereit
+
+## Komponenteninteraktionen
+
+- **src/plantuml2drawio/core.py** übernimmt die Koordination und generische Funktionalität
+- **src/processors/activity_processor.py** implementiert die spezifische Logik für Aktivitätsdiagramme
+- **src/plantuml2drawio/app.py** behandelt nur UI-bezogene Aspekte
+- **src/processors/base_processor.py** definiert die gemeinsame Schnittstelle für alle Prozessoren
 
 ## Modulare Architektur
 
 Das Diagramm veranschaulicht die klare Trennung der Verantwortlichkeiten zwischen den Modulen:
 
-- **p2dcore.py** übernimmt die Koordination und generische Funktionalität
-- **activity_processor.py** konzentriert sich ausschließlich auf Aktivitätsdiagramme
-- **p2dapp.py** behandelt nur UI-bezogene Aspekte
+- **src/plantuml2drawio/core.py** übernimmt die Koordination und generische Funktionalität
+- **src/processors/activity_processor.py** konzentriert sich ausschließlich auf Aktivitätsdiagramme
+- **src/plantuml2drawio/app.py** behandelt nur UI-bezogene Aspekte
 
 Diese Architektur erleichtert die zukünftige Erweiterung um weitere Diagrammtypen. Neue Prozessoren können als separate Module hinzugefügt werden, ohne bestehenden Code zu verändern. 

@@ -24,6 +24,12 @@ Dieses Dokument beschreibt die Installation und Benutzung des PlantUML zu Draw.i
 
 ### Installation als Python-Paket (optional)
 
+Alternativ können Sie das Paket im Entwicklungsmodus installieren:
+
+```bash
+pip install -e .
+```
+
 Sobald das Paket auf PyPI verfügbar ist:
 
 ```bash
@@ -38,38 +44,50 @@ Der Konverter kann sowohl über die Kommandozeile als auch über die grafische B
 
 #### Grundlegende Verwendung
 
+Mit den Einstiegsskripten:
 ```bash
-python p2dcore.py --input <eingabedatei.puml> --output <ausgabedatei.drawio>
+./p2d-cli --input <eingabedatei.puml> --output <ausgabedatei.drawio>
+```
+
+Mit installiertem Paket:
+```bash
+p2d-cli --input <eingabedatei.puml> --output <ausgabedatei.drawio>
 ```
 
 Beispiel:
 ```bash
-python p2dcore.py --input diagrams/activity.puml --output diagrams/activity.drawio
+./p2d-cli --input examples/activity_examples/simple_activity.puml --output output.drawio
 ```
 
 #### Nur Diagrammtyp anzeigen
 
 ```bash
-python p2dcore.py --input <eingabedatei.puml> --info
+./p2d-cli --input <eingabedatei.puml> --info
 ```
 
 Beispiel:
 ```bash
-python p2dcore.py --input diagrams/activity.puml --info
+./p2d-cli --input examples/activity_examples/simple_activity.puml --info
 ```
 
 #### Hilfe anzeigen
 
 ```bash
-python p2dcore.py --help
+./p2d-cli --help
 ```
 
 ### Grafische Benutzeroberfläche
 
 Starten Sie die grafische Benutzeroberfläche mit:
 
+Mit den Einstiegsskripten:
 ```bash
-python p2dapp.py
+./p2d-gui
+```
+
+Mit installiertem Paket:
+```bash
+p2d-gui
 ```
 
 #### Verwendung der GUI
@@ -142,7 +160,7 @@ stop
 Bei Problemen können Sie detailliertere Logs aktivieren:
 
 ```bash
-python p2dcore.py --input <eingabedatei.puml> --output <ausgabedatei.drawio> --debug
+./p2d-cli --input <eingabedatei.puml> --output <ausgabedatei.drawio> --debug
 ```
 
 ## Tipps und Tricks

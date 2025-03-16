@@ -77,7 +77,7 @@ Jedes Modul sollte folgende Funktionen implementieren:
        # ...
    ```
 
-Anschließend muss das Kernmodul `p2dcore.py` aktualisiert werden, um das neue Modul zu importieren und für den entsprechenden Diagrammtyp zu verwenden.
+Anschließend muss das Kernmodul `src/plantuml2drawio/core.py` aktualisiert werden, um das neue Modul zu importieren und für den entsprechenden Diagrammtyp zu verwenden.
 
 ## Verbesserung der Benutzeroberfläche
 
@@ -200,4 +200,37 @@ Dies würde einen vollständigen Round-Trip-Workflow ermöglichen.
 
 1. Vollständige Unterstützung aller PlantUML-Diagrammtypen
 2. Umgekehrte Konvertierung (Draw.io zu PlantUML)
-3. Erweiterte Integration in Entwicklungsumgebungen 
+3. Erweiterte Integration in Entwicklungsumgebungen
+
+## Hinzufügen eines neuen Diagrammtyps
+
+Um einen neuen Diagrammtyp zu unterstützen, sind folgende Schritte erforderlich:
+
+1. **Erkennung des Diagrammtyps**
+   - Erweitern Sie die Diagrammtyperkennung in `src/plantuml2drawio/core.py`
+   - Fügen Sie spezifische Erkennungsmuster für den neuen Diagrammtyp hinzu
+
+2. **Parsing und Konvertierung**
+   - Erstellen Sie einen neuen Prozessor in `src/processors/`
+   - Implementieren Sie die Parsing-Logik für den neuen Diagrammtyp
+   - Entwickeln Sie die Konvertierungslogik für Draw.io-XML
+
+3. **Implementieren der erforderlichen Funktionen**:
+   - `is_valid_diagram(content)`: Prüft, ob es sich um ein gültiges Diagramm des neuen Typs handelt
+   - `parse_diagram(content)`: Extrahiert Knoten und Kanten aus dem PlantUML-Code
+   - `layout_diagram(nodes, edges)`: Berechnet das Layout für den neuen Diagrammtyp
+   - `create_drawio_xml(nodes, edges)`: Erzeugt das Draw.io-XML für den neuen Diagrammtyp
+   - `create_json(nodes, edges)`: Erstellt eine JSON-Repräsentation des Diagramms
+
+4. **Aktualisieren der Konfiguration**:
+   - Fügen Sie den neuen Diagrammtyp in `src/plantuml2drawio/config.py` hinzu:
+     ```python
+     AVAILABLE_PROCESSORS = {
+         DIAGRAM_TYPE_ACTIVITY: "plantuml2drawio.processors.activity_processor.ActivityDiagramProcessor",
+         DIAGRAM_TYPE_SEQUENCE: "plantuml2drawio.processors.sequence_processor.SequenceDiagramProcessor"
+     }
+     ```
+
+5. **Testen des neuen Diagrammtyps**:
+   - Erstellen Sie Testfälle in `tests/`
+   - Fügen Sie Beispiele in `examples/` hinzu 

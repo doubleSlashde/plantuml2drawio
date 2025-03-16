@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""
+Kommandozeileneinstiegspunkt für plantuml2drawio.
+"""
+import sys
+import os
+
+# Füge das src-Verzeichnis zum Pythonpfad hinzu, wenn es im Entwicklungsmodus verwendet wird
+sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
+
+from src.plantuml2drawio.core import main
+
+if __name__ == "__main__":
+    main() 

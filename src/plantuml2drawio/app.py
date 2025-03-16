@@ -6,7 +6,7 @@ import sys
 VERSION = "1.1.0"
 
 # Importiere die Funktion aus dem neuen Modul mit dem neuen Namen
-from modules.activity_processor import is_valid_activity_diagram
+from plantuml2drawio.processors.activity_processor import is_valid_activity_diagram
 
 class FileSelectorApp:
     def __init__(self, root):
@@ -374,7 +374,7 @@ class FileSelectorApp:
 
     def convert_to_drawio(self):
         # Importiere die benötigten Module erst jetzt, da sie nur für die Konvertierung benötigt werden
-        from modules.activity_processor import (
+        from plantuml2drawio.processors.activity_processor import (
             parse_activity_diagram,
             layout_activity_diagram,
             create_activity_drawio_xml

@@ -1,60 +1,72 @@
 #!/usr/bin/env python3
+"""
+Modul zur Verarbeitung von PlantUML-Aktivitätsdiagrammen.
+"""
 import re
 import xml.etree.ElementTree as ET
 import sys
+import json
 from collections import defaultdict
+from .base_processor import BaseDiagramProcessor, DiagramNode, DiagramEdge
 
-# Class definitions needed for the functions
-class Node:
-    def __init__(self, id, label, shape, x, y, width, height):
-        self.id = id
-        self.label = label
-        self.shape = shape  # z.B. "ellipse", "rectangle", "rhombus", "hexagon"
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+# Für Abwärtskompatibilität behalten wir die alten Klassennamen bei
+class Node(DiagramNode):
+    pass
 
-class Edge:
-    def __init__(self, id, source, target, label=""):
-        self.id = id
-        self.source = source
-        self.target = target
-        self.label = label
+class Edge(DiagramEdge):
+    pass
+
+class ActivityDiagramProcessor(BaseDiagramProcessor):
+    """Prozessor für PlantUML-Aktivitätsdiagramme."""
+    
+    @staticmethod
+    def is_valid_diagram(content: str) -> bool:
+        """Überprüft, ob es sich um ein gültiges Aktivitätsdiagramm handelt."""
+        return is_valid_activity_diagram(content)
+    
+    @staticmethod
+    def parse_diagram(content: str):
+        """Parst ein Aktivitätsdiagramm."""
+        return parse_activity_diagram(content)
+    
+    @staticmethod
+    def layout_diagram(nodes, edges, **kwargs):
+        """Berechnet das Layout eines Aktivitätsdiagramms."""
+        return layout_activity_diagram(nodes, edges, **kwargs)
+    
+    @staticmethod
+    def create_drawio_xml(nodes, edges):
+        """Erstellt ein Draw.io-XML-Dokument aus einem Aktivitätsdiagramm."""
+        return create_activity_drawio_xml(nodes, edges)
+    
+    @staticmethod
+    def create_json(nodes, edges):
+        """Erstellt eine JSON-Repräsentation eines Aktivitätsdiagramms."""
+        return create_json(nodes, edges)
+
+# Für Abwärtskompatibilität exportieren wir die ursprünglichen Funktionen
+def is_valid_activity_diagram(plantuml_content):
+    """Überprüft, ob der übergebene PlantUML-Inhalt ein gültiges Aktivitätsdiagramm ist."""
+    # Zuerst prüfen, ob es sich überhaupt um ein PlantUML-Diagramm handelt
+    if "@startuml" not in plantuml_content or "@enduml" not in plantuml_content:
+        return False
+        
+    # Schaut nach typischen Elementen eines Aktivitätsdiagramms
+    pattern = r'(@startuml.*?@enduml|start|stop|if|endif|repeat|while|endwhile|fork|end fork)'
+    matches = re.findall(pattern, plantuml_content, re.DOTALL | re.MULTILINE)
+    
+    # Überprüft, ob Schlüsselwörter für Aktivitätsdiagramme vorhanden sind
+    has_startuml_enduml = '@startuml' in plantuml_content and '@enduml' in plantuml_content
+    has_activity_elements = bool(matches)
+    
+    # Mindestens ein Start-Element sollte vorhanden sein
+    has_start = 'start' in plantuml_content.lower()
+    
+    return has_startuml_enduml and has_activity_elements and has_start
 
 # Vordefinierte Regex-Muster für bessere Performance
 RE_ACTIVITY = re.compile(r":\s*(.+?);", re.DOTALL)  # DOTALL erlaubt Newlines in Aktivitäten
 RE_IF_BLOCK = re.compile(r"if\s*\(.+?\).+?endif", re.DOTALL | re.IGNORECASE)
-
-def is_valid_activity_diagram(plantuml_content):
-    """
-    Prüft, ob der übergebene String ein gültiges PlantUML-Aktivitätsdiagramm enthält.
-
-    Kriterien:
-      - Der String muss die Markierungen @startuml und @enduml enthalten.
-      - Der String muss die Schlüsselwörter 'start' und 'stop' enthalten (Groß-/Kleinschreibung wird ignoriert).
-      - Es muss mindestens eine Aktivitätszeile (im Format :Text;) oder alternativ
-        ein if-Block mit 'if' und 'endif' vorhanden sein.
-
-    Rückgabe:
-      - True, wenn alle Kriterien erfüllt sind.
-      - False, andernfalls.
-    """
-    # Schnelle String-Überprüfungen zuerst für bessere Performance
-    if "@startuml" not in plantuml_content or "@enduml" not in plantuml_content:
-        return False
-
-    plantuml_lower = plantuml_content.lower()
-    if "start" not in plantuml_lower or "stop" not in plantuml_lower:
-        return False
-
-    # Überprüfung auf Aktivitätszeile oder if-Block mit kompilierten Regex-Mustern
-    if not RE_ACTIVITY.search(plantuml_content):
-        # Wenn keine Aktivitätszeile gefunden wurde, alternativ nach einem if-Block suchen
-        if not RE_IF_BLOCK.search(plantuml_content):
-            return False
-
-    return True
 
 def parse_activity_diagram(plantuml_content):
     """
@@ -516,7 +528,6 @@ def create_json(nodes, edges):
     Rückgabe:
       Ein String, der die JSON-Repräsentation enthält.
     """
-    import json
     data = {
         "nodes": [
             {

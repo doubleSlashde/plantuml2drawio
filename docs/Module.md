@@ -2,21 +2,21 @@
 
 Dieser Abschnitt enthält detaillierte Informationen zu den einzelnen Modulen des PlantUML zu Draw.io Konverters.
 
-## p2dcore.py - Kernmodul
+## src/plantuml2drawio/core.py - Kernmodul
 
-Das Kernmodul orchestriert den gesamten Konvertierungsprozess und stellt die Hauptfunktionalität des Systems bereit.
+Das Kernmodul ist verantwortlich für:
+
+- Verarbeitung von Kommandozeilenargumenten
+- Erkennung des PlantUML-Diagrammtyps
+- Koordination des Konvertierungsprozesses
+- Auswahl des entsprechenden Prozessors für den erkannten Diagrammtyp
+- Ausgabe des Ergebnisses im gewünschten Format
 
 ### Hauptfunktionen
 
-| Funktion | Beschreibung |
-|----------|--------------|
-| `determine_plantuml_diagram_type(plantuml_content)` | Analysiert PlantUML-Code und identifiziert den Diagrammtyp (Aktivitätsdiagramm, Sequenzdiagramm, etc.) |
-| `process_diagram(plantuml_content, output_json)` | Verarbeitet den PlantUML-Inhalt und erzeugt XML oder JSON |
-| `read_plantuml_file(file_path)` | Liest eine PlantUML-Datei ein |
-| `write_output_file(content, file_path)` | Schreibt den konvertierten Inhalt in eine Datei |
-| `get_output_file_path(input_file, output_file, is_json)` | Bestimmt den Pfad für die Ausgabedatei |
-| `handle_info_request(diagram_type)` | Zeigt Informationen zum erkannten Diagrammtyp an |
-| `main()` | Hauptfunktion für die Kommandozeilenschnittstelle |
+- `determine_plantuml_diagram_type(content)`: Erkennt den Typ eines PlantUML-Diagramms
+- `process_file(input_file, output_file, info_only)`: Steuert den Konvertierungsprozess
+- `main()`: Einstiegspunkt für die Kommandozeilenverarbeitung
 
 ### Konstanten
 
@@ -59,15 +59,20 @@ Dieses Modul ist spezialisiert auf die Verarbeitung von PlantUML-Aktivitätsdiag
 
 - Standardbibliotheken: `re`, `xml.etree.ElementTree`, `sys`, `collections.defaultdict`, `json`
 
-## p2dapp.py - Grafische Benutzeroberfläche
+## src/plantuml2drawio/app.py - Grafische Benutzeroberfläche
 
-Dieses Modul implementiert die grafische Benutzeroberfläche für den Konverter, basierend auf customtkinter.
+Die GUI-Komponente bietet:
 
-### Klassen
+- Eine benutzerfreundliche Oberfläche für die Konvertierung
+- Funktionen zum Laden und Speichern von Dateien
+- Anzeige des erkannten Diagrammtyps
+- Visualisierung des Konvertierungsprozesses
 
-| Klasse | Beschreibung |
-|--------|--------------|
-| `FileSelectorApp` | Hauptklasse für die GUI mit Methoden für Dateioperationen, Benutzerinteraktionen und Konvertierung |
+### Hauptklassen
+
+- `FileSelectorApp`: Hauptklasse der Anwendung
+- `PlantUMLEditor`: Editor für PlantUML-Code
+- `StatusBar`: Statusleiste für Meldungen
 
 ### Hauptmethoden von FileSelectorApp
 
@@ -87,26 +92,53 @@ Dieses Modul implementiert die grafische Benutzeroberfläche für den Konverter,
 - `customtkinter`: Erweitertes Tkinter für moderne GUI-Elemente
 - Standardbibliotheken: `os`, `sys`, `tkinter`, `traceback`
 
-## Zusammenspiel der Module
+## src/processors/base_processor.py - Basisklasse für Prozessoren
 
-1. **Ablauf bei CLI-Nutzung**:
-   - `p2dcore.py` wird mit Eingabe- und Ausgabeparametern aufgerufen
-   - Die Hauptfunktion liest die Datei und bestimmt den Diagrammtyp
-   - Bei Aktivitätsdiagrammen werden die entsprechenden Funktionen aus `activity_processor.py` aufgerufen
-   - Das Ergebnis wird in die angegebene Ausgabedatei geschrieben
+Diese Basisklasse definiert die Schnittstelle für alle Diagramm-Prozessoren:
 
-2. **Ablauf bei GUI-Nutzung**:
-   - `p2dapp.py` zeigt die Benutzeroberfläche an
-   - Der Benutzer lädt eine Datei oder gibt PlantUML-Code direkt ein
-   - Beim Drücken des Konvertierungsbuttons werden die entsprechenden Funktionen aus `activity_processor.py` aufgerufen
-   - Das Ergebnis wird in einer vom Benutzer gewählten Datei gespeichert
+- Abstrakte Methoden für die Verarbeitung verschiedener Diagrammtypen
+- Gemeinsame Funktionalität für alle Prozessoren
+- Basisklassen für Diagrammelemente (Knoten, Kanten)
 
-## Erweiterungspunkte
+## src/processors/activity_processor.py - Aktivitätsdiagramm-Prozessor
 
-Für die Unterstützung weiterer Diagrammtypen würden folgende Schritte erforderlich sein:
+Spezialisiertes Modul für die Verarbeitung von Aktivitätsdiagrammen:
 
-1. Erstellen eines neuen spezialisierten Moduls (z.B. `modules/sequence_processor.py`)
-2. Implementieren der entsprechenden Funktionen (Validierung, Parsing, Layout, XML-Generierung)
-3. Aktualisieren von `p2dcore.py`, um das neue Modul für den entsprechenden Diagrammtyp zu verwenden
+- Parsing von PlantUML-Aktivitätsdiagrammen
+- Extraktion von Knoten und Kanten
+- Layout-Berechnung
+- Generierung des Draw.io-XML-Formats
+
+### Hauptfunktionen
+
+- `is_valid_activity_diagram(content)`: Prüft, ob es sich um ein gültiges Aktivitätsdiagramm handelt
+- `parse_activity_diagram(content)`: Extrahiert Knoten und Kanten
+- `layout_activity_diagram(nodes, edges)`: Berechnet das Layout
+- `create_activity_drawio_xml(nodes, edges)`: Erzeugt das Draw.io-XML
+
+## Modulinteraktionen
+
+Der typische Ablauf einer Konvertierung:
+
+1. **Eingabe**:
+   - `core.py` wird mit Eingabe- und Ausgabeparametern aufgerufen
+   - `app.py` zeigt die Benutzeroberfläche an
+
+2. **Verarbeitung**:
+   - `core.py` erkennt den Diagrammtyp
+   - Der entsprechende Prozessor wird ausgewählt
+   - Der Prozessor parst das Diagramm und berechnet das Layout
+   - Der Prozessor generiert das Draw.io-XML
+
+3. **Ausgabe**:
+   - `core.py` oder `app.py` speichert das Ergebnis
+
+## Erweiterung um neue Diagrammtypen
+
+Um einen neuen Diagrammtyp zu unterstützen:
+
+1. Erstellen eines neuen Prozessors in `src/processors/`, der von `BaseDiagramProcessor` erbt
+2. Implementieren der abstrakten Methoden für den neuen Diagrammtyp
+3. Aktualisieren von `core.py`, um das neue Modul für den entsprechenden Diagrammtyp zu verwenden
 
 Dank der modularen Architektur sind keine größeren Änderungen am bestehenden Code nötig. 

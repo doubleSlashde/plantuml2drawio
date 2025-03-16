@@ -8,5 +8,5 @@ rmdir /s /q build 2>nul
 rmdir /s /q dist 2>nul
 
 echo Building executable...
-python -m PyInstaller --clean p2dapp.spec
+python -m PyInstaller --clean p2d.spec
 

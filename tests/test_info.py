@@ -3,7 +3,7 @@
 import os
 import tempfile
 import subprocess
-from test_diagram_type import (
+from diagram_examples import (
     activity_diagram, 
     sequence_diagram, 
     class_diagram, 

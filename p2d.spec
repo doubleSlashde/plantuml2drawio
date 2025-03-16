@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['p2dapp.py'],
+    ['src/plantuml2drawio/app.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='p2dapp',
+    name='p2d',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -35,11 +35,11 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['p2dapp_icon.icns'],
+    icon=['resources/icons/p2d_icon.icns'],
 )
 app = BUNDLE(
     exe,
-    name='p2dapp.app',
-    icon='p2dapp_icon.icns',
+    name='p2d.app',
+    icon='resources/icons/p2d_icon.icns',
     bundle_identifier=None,
-)
+) 

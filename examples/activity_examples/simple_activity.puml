@@ -1,0 +1,25 @@
+@startuml
+title Einfaches Aktivitätsdiagramm
+start
+:Schritt 1: Anforderung analysieren;
+:Schritt 2: Architektur entwerfen;
+if (Ist die Architektur genehmigt?) then (ja)
+  :Schritt 3a: Entwicklung starten;
+  :Schritt 4a: Tests schreiben;
+  :Schritt 5a: Implementierung durchführen;
+else (nein)
+  :Schritt 3b: Architektur überarbeiten;
+  :Schritt 4b: Erneute Genehmigung einholen;
+endif
+:Schritt 6: System testen;
+if (Bestehen alle Tests?) then (ja)
+  :Schritt 7a: Deployment;
+  :Schritt 8a: Benutzerakzeptanztests;
+else (nein)
+  :Schritt 7b: Fehler beheben;
+  :Schritt 8b: Regression Tests durchführen;
+  goto Schritt 6;
+endif
+:Schritt 9: Produktivsetzung;
+stop
+@enduml 

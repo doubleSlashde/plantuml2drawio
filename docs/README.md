@@ -1,3 +1,98 @@
+# PlantUML to Draw.io Konverter - Dokumentation
+
+Diese Dokumentation beschreibt die Struktur, Funktionsweise und Verwendung des PlantUML to Draw.io Konverters.
+
+## Projektorganisation
+
+Das Projekt ist wie folgt strukturiert:
+
+```
+plantuml2drawio/
+├── README.md                    # Hauptdokumentation
+├── LICENSE                      # Lizenzinformationen
+├── requirements.txt             # Python-Abhängigkeiten
+├── setup.py                     # Setupskript für die Installation
+├── .gitignore                   # Git-Ignore-Datei
+├── plantuml2drawio-cli          # Kommandozeileneinstiegspunkt
+├── plantuml2drawio-gui          # GUI-Einstiegspunkt
+├── src/                         # Hauptquellcode
+│   ├── plantuml2drawio/         # Kernpaket
+│   │   ├── core.py              # Kernfunktionalität
+│   │   ├── app.py               # GUI-Anwendung
+│   │   └── config.py            # Konfigurationseinstellungen
+│   └── processors/              # Diagramm-Prozessoren
+│       ├── base_processor.py    # Basisklasse für Prozessoren
+│       └── activity_processor.py # Aktivitätsdiagramm-Prozessor
+├── tests/                       # Tests
+│   ├── test_diagram_type.py     # Tests für Diagrammtyperkennung
+│   └── data/                    # Testdaten
+├── docs/                        # Dokumentation
+│   ├── Installation_und_Benutzung.md
+│   ├── Arbeitsablauf.md
+│   └── ... (weitere Dokumentation)
+├── examples/                    # Beispieldiagramme
+│   └── activity_examples/       # Aktivitätsdiagramm-Beispiele
+└── resources/                   # Ressourcen
+    └── icons/                   # Anwendungsicons
+```
+
+## Schnelleinstieg
+
+### Installation
+
+```bash
+# Repository klonen
+git clone https://github.com/[username]/plantuml2drawio.git
+cd plantuml2drawio
+
+# Entwicklungsmodus installieren
+pip install -e .
+```
+
+### Verwendung
+
+#### Kommandozeile
+
+```bash
+# Direkt über die Einstiegsskripte
+./p2d-cli --input path/to/diagram.puml --output path/to/diagram.drawio
+
+# Oder über die installierten Kommandozeilenbefehle
+p2d-cli --input path/to/diagram.puml --output path/to/diagram.drawio
+```
+
+#### Grafische Benutzeroberfläche
+
+```bash
+# Direkt über die Einstiegsskripte
+./p2d-gui
+
+# Oder über die installierten Kommandozeilenbefehle
+p2d-gui
+```
+
+## Weitere Dokumentation
+
+- [Installation und Benutzung](Installation_und_Benutzung.md)
+- [Arbeitsablauf](Arbeitsablauf.md)
+- [Systemarchitektur](Systemarchitektur.md)
+- [Erweiterungen](Erweiterungen.md)
+- [Module](Module.md)
+- [Komponenten](Komponenten.md)
+- [Systemübersicht](Systemuebersicht.md)
+
+## Entwicklung
+
+Für Entwickler, die zum Projekt beitragen möchten, bietet die neue modulare Struktur folgende Vorteile:
+
+1. **Neue Diagrammtypen hinzufügen**: Erstellen Sie einfach einen neuen Prozessor im `src/processors/`-Verzeichnis, der von `BaseDiagramProcessor` erbt.
+
+2. **Tests**: Erweitern Sie die Tests im `tests/`-Verzeichnis.
+
+3. **Beispiele**: Fügen Sie Beispiele in das `examples/`-Verzeichnis ein, um die Funktionsweise zu demonstrieren.
+
+Die Projektstruktur folgt gängigen Python-Standards und ermöglicht eine einfache Erweiterung und Wartung.
+
 # PlantUML to Draw.io Converter
 
 Ein Werkzeug zur Konvertierung von PlantUML-Diagrammen in das Draw.io-Format.
@@ -36,13 +131,13 @@ pip install -r requirements.txt
 #### Kommandozeile
 
 ```bash
-python p2dcore.py --input diagrams/activity.puml --output diagrams/activity.drawio
+python p2d-cli --input diagrams/activity.puml --output diagrams/activity.drawio
 ```
 
 #### Grafische Benutzeroberfläche
 
 ```bash
-python p2dapp.py
+./p2d-gui
 ```
 
 ## 📚 Dokumentation

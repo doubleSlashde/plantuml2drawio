@@ -6,72 +6,43 @@ Dieses Dokument beschreibt die aktuelle Architektur des PlantUML zu Draw.io Konv
 
 Das System ist modular aufgebaut und besteht aus folgenden Hauptkomponenten:
 
-1. **p2dcore.py**: Die Kernkomponente, die den Konvertierungsprozess steuert
-2. **modules/plantuml_processor.py**: Modul für die Erkennung von PlantUML-Diagrammtypen
-3. **modules/activity_processor.py**: Spezialisiertes Modul für die Verarbeitung von Aktivitätsdiagrammen
-4. **p2dapp.py**: Grafische Benutzeroberfläche für den Konverter
+1. **core.py**: Die Kernkomponente, die den Konvertierungsprozess steuert
+2. **processors/activity_processor.py**: Modul zur Verarbeitung von Aktivitätsdiagrammen
+3. **processors/base_processor.py**: Basisklasse für alle Diagramm-Prozessoren
+4. **app.py**: Grafische Benutzeroberfläche für den Konverter
 
 ## Komponentendiagramm
 
 ```plantuml
 @startuml
 
-package "Kommandozeilen-Interface" {
-  [p2dcore.py] as Core
+package "PlantUML zu Draw.io Konverter" {
+  [core.py] as Core
+  [app.py] as App
+  [processors/activity_processor.py] as ActivityProcessor
+  [processors/base_processor.py] as BaseProcessor
 }
 
-package "GUI" {
-  [p2dapp.py] as App
-}
-
-package "modules" {
-  [plantuml_processor.py] as PlantUMLProcessor
-  [activity_processor.py] as ActivityProcessor
-}
-
-package "Tests" {
-  [test_diagram_type.py] as DiagramTypeTest
-}
-
-App --> Core : nutzt
-Core --> PlantUMLProcessor : importiert
-Core --> ActivityProcessor : importiert
-DiagramTypeTest --> PlantUMLProcessor : testet
+Core --> ActivityProcessor : verwendet
+App --> Core : verwendet
+ActivityProcessor --> BaseProcessor : erbt von
 
 @enduml
 ```
 
 ## Komponenten im Detail
 
-### p2dcore.py
+### core.py
 
-Die zentrale Steuerungskomponente des Systems:
+Die Kernkomponente übernimmt folgende Aufgaben:
 
-- Enthält den Haupteinstiegspunkt für die Kommandozeilenverarbeitung
-- Analysiert Kommandozeilenparameter
-- Koordiniert den Gesamtprozess der Konvertierung
-- Liest die Eingabedateien und schreibt die Ausgabedateien
-- Ruft die spezialisierten Module für die jeweiligen Diagrammtypen auf
+1. Parsen von Kommandozeilenargumenten
+2. Erkennen des PlantUML-Diagrammtyps
+3. Auswahl des entsprechenden Verarbeitungsmoduls
+4. Koordination des Konvertierungsprozesses
+5. Ausgabe des Ergebnisses im gewünschten Format
 
-#### Hauptfunktionen:
-
-- `process_file(input_file, output_file, info_only)`: Steuert den gesamten Konvertierungsprozess
-- `main()`: Verarbeitet Kommandozeilenargumente und ruft `process_file` auf
-
-### modules/plantuml_processor.py
-
-Dieses Modul ist verantwortlich für:
-
-- Erkennung des PlantUML-Diagrammtyps aus dem Quellcode
-- Validierung von PlantUML-Aktivitätsdiagrammen
-- Bereitstellung von gemeinsam genutzten Funktionen und Klassen für verschiedene Diagrammtypen
-
-#### Hauptfunktionen:
-
-- `determine_plantuml_diagram_type(plantuml_content)`: Identifiziert den Typ eines PlantUML-Diagramms
-- `is_valid_plantuml_activitydiagram(plantuml_content)`: Überprüft, ob ein Diagramm ein gültiges Aktivitätsdiagramm ist
-
-### modules/activity_processor.py
+### processors/activity_processor.py
 
 Spezialisiertes Modul für die Verarbeitung von Aktivitätsdiagrammen:
 
@@ -86,14 +57,22 @@ Spezialisiertes Modul für die Verarbeitung von Aktivitätsdiagrammen:
 - `create_drawioxml_activity(nodes, edges)`: Erzeugt das Draw.io-XML für ein Aktivitätsdiagramm
 - `create_json(nodes, edges)`: Erstellt eine JSON-Repräsentation des Diagramms
 
-### p2dapp.py
+### processors/base_processor.py
 
-Grafische Benutzeroberfläche:
+Basisklasse für alle Diagramm-Prozessoren:
 
-- Bietet eine benutzerfreundliche Alternative zur Kommandozeile
-- Ermöglicht die Eingabe von PlantUML-Code
-- Visualisiert den Konvertierungsprozess
-- Zeigt Ergebnisse und Fehler an
+- Enthält gemeinsame Funktionen und Attribute für alle Diagramm-Prozessoren
+- Stellt eine Schnittstelle für alle Diagramm-Prozessoren bereit
+
+### app.py
+
+Die grafische Benutzeroberfläche bietet:
+
+1. Ein Textfeld zur Eingabe des PlantUML-Codes
+2. Funktionen zum Laden und Speichern von Dateien
+3. Eine Schaltfläche zum Starten der Konvertierung
+4. Erkennung des Diagrammtyps
+5. Anzeige von Statusmeldungen
 
 ## Datenfluss
 
@@ -115,8 +94,8 @@ Mit der geplanten Unterstützung weiterer Diagrammtypen wird sich die Architektu
 @startuml
 
 package "Kernkomponenten" {
-  [p2dcore.py] as Core
-  [p2dapp.py] as App
+  [core.py] as Core
+  [app.py] as App
 }
 
 package "modules" {
