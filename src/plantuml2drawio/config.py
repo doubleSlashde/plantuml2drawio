@@ -5,8 +5,8 @@ Enthält Konfigurationsparameter und Konstanten für das gesamte Projekt.
 """
 
 # Versionsinformationen
-VERSION = "1.1.0"
-VERSION_DATE = "2024-03-15"
+VERSION = "1.2.0"
+VERSION_DATE = "2025-03-16"
 
 # Dateiformate und Erweiterungen
 DEFAULT_JSON_EXT = ".json"
@@ -36,7 +36,9 @@ DEFAULT_WINDOW_HEIGHT = 600
 DEFAULT_WINDOW_TITLE = "PlantUML zu Draw.io Konverter"
 
 # Ressourcen
-ICON_PATH = "resources/icons/p2d_icon"  # Ohne Dateiendung, wird je nach Plattform ergänzt
+ICON_PATH = (
+    "resources/icons/p2d_icon"  # Ohne Dateiendung, wird je nach Plattform ergänzt
+)
 
 # Verfügbare Prozessoren
 AVAILABLE_PROCESSORS = {
@@ -44,4 +46,9 @@ AVAILABLE_PROCESSORS = {
 }
 
 # Debug-Einstellungen
-DEBUG = False 
+DEBUG = False
+
+# Logging-Konfiguration
+LOG_LEVEL = "INFO"
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"

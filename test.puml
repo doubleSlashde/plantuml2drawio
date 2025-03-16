@@ -1,0 +1,11 @@
+@startuml
+start
+:First Activity;
+if (Condition?) then (yes)
+  :Activity 2;
+else (no)
+  :Activity 3;
+endif
+:Final Activity;
+stop
+@enduml
