@@ -2,15 +2,17 @@
 """
 Tests für die Diagrammtyperkennung.
 """
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Füge das src-Verzeichnis zum Pythonpfad hinzu
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.plantuml2drawio.core import determine_plantuml_diagram_type
-from src.plantuml2drawio.processors.activity_processor import is_valid_activity_diagram
+from src.plantuml2drawio.processors.activity_processor import \
+    is_valid_activity_diagram
+
 
 class TestDiagramTypeDetection(unittest.TestCase):
     """Testklasse für die Diagrammtyperkennung."""
@@ -31,10 +33,10 @@ class TestDiagramTypeDetection(unittest.TestCase):
         stop
         @enduml
         """
-        
+
         diagram_type = determine_plantuml_diagram_type(plantuml_content)
         self.assertEqual(diagram_type, "activity")
-        
+
         # Überprüfe auch die direkte is_valid_activity_diagram Funktion
         is_valid = is_valid_activity_diagram(plantuml_content)
         self.assertTrue(is_valid)
@@ -46,10 +48,10 @@ class TestDiagramTypeDetection(unittest.TestCase):
         Dies ist kein gültiges PlantUML-Diagramm.
         Es enthält keine Start/End-Tags.
         """
-        
+
         diagram_type = determine_plantuml_diagram_type(plantuml_content)
         self.assertEqual(diagram_type, "not_plantuml")
-        
+
         # Überprüfe auch die direkte is_valid_activity_diagram Funktion
         is_valid = is_valid_activity_diagram(plantuml_content)
         self.assertFalse(is_valid)
@@ -57,7 +59,7 @@ class TestDiagramTypeDetection(unittest.TestCase):
     def test_empty_diagram(self):
         """Test, ob ein leeres Diagramm korrekt erkannt wird."""
         plantuml_content = ""
-        
+
         diagram_type = determine_plantuml_diagram_type(plantuml_content)
         self.assertEqual(diagram_type, "not_plantuml")
 
@@ -70,12 +72,13 @@ class TestDiagramTypeDetection(unittest.TestCase):
         stop
         @enduml
         """
-        
+
         diagram_type = determine_plantuml_diagram_type(plantuml_content)
         self.assertEqual(diagram_type, "activity")
-        
+
         is_valid = is_valid_activity_diagram(plantuml_content)
         self.assertTrue(is_valid)
 
-if __name__ == '__main__':
-    unittest.main() 
+
+if __name__ == "__main__":
+    unittest.main()

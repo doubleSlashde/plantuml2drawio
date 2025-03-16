@@ -187,4 +187,4 @@ User ||--o{ Order
 Order ||--o{ OrderItem
 Product ||--o{ OrderItem
 @enduml
-""" 
+"""

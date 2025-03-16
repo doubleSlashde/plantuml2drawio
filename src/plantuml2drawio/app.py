@@ -1,18 +1,37 @@
-#!/usr/bin/env python3
+"""GUI application for converting PlantUML diagrams to Draw.io format."""
+
 import os
 import sys
+from pathlib import Path
+from tkinter import filedialog
 
-# Versionsnummer als Konstante
+from plantuml2drawio.processors.activity_processor import (
+    create_activity_drawio_xml, layout_activity_diagram,
+    parse_activity_diagram)
+
+# Version number as constant
 VERSION = "1.2.0"
 
+from plantuml2drawio.processors import is_valid_activity_diagram
 # Importiere die Funktion aus dem neuen Modul mit dem neuen Namen
 from plantuml2drawio.processors.activity_processor import (
-    is_valid_activity_diagram, parse_activity_diagram)
+    is_valid_activity_diagram, layout_activity_diagram, parse_activity_diagram)
 
 
 class FileSelectorApp:
+    """Main application window for the PlantUML to Draw.io converter.
+
+    This class handles the GUI interface for selecting, viewing, and converting
+    PlantUML files to Draw.io format.
+    """
+
     def __init__(self, root):
-        # Verzögerter Import von customtkinter innerhalb der Klasse
+        """Initialize the application window.
+
+        Args:
+            root: The root window of the application.
+        """
+        # Delayed import of customtkinter inside the class
         import customtkinter as ctk
 
         self.ctk = ctk
@@ -175,42 +194,61 @@ class FileSelectorApp:
         self.current_file = None
 
     def create_menubar(self):
-        """Erstellt eine Menüleiste für den schnellen Zugriff auf Hauptfunktionen."""
-        import tkinter as tk
+        """Create the application menu bar with File and Help menus."""
+        menubar = self.ctk.CTkFrame(self.root)
+        menubar.pack(fill="x")
 
-        menubar = tk.Menu(self.root)
+        # File menu
+        file_menu = self.ctk.CTkFrame(menubar)
+        file_menu.pack(side="left", padx=5)
 
-        # "File" menu
-        file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(
-            label="Datei öffnen", command=self.open_file, accelerator="Strg+O"
+        open_button = self.ctk.CTkButton(
+            file_menu, text="Open", command=self.open_file, width=80
         )
-        file_menu.add_separator()
-        file_menu.add_command(
-            label="Beenden", command=self.root.quit, accelerator="Alt+F4"
+        open_button.pack(side="left", padx=2)
+
+        # Help menu
+        help_menu = self.ctk.CTkFrame(menubar)
+        help_menu.pack(side="right", padx=5)
+
+        about_button = self.ctk.CTkButton(
+            help_menu, text="About", command=self.show_about, width=80
         )
-        menubar.add_cascade(label="Datei", menu=file_menu)
-
-        # "Help" menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="Über", command=self.show_about, accelerator="F1")
-        menubar.add_cascade(label="Hilfe", menu=help_menu)
-
-        self.root.config(menu=menubar)
-
-        # Bind keyboard shortcuts
-        self.root.bind("<Control-o>", lambda event: self.open_file())
-        self.root.bind("<F1>", lambda event: self.show_about())
-        self.root.bind("<Control-s>", lambda event: self.convert_to_drawio())
+        about_button.pack(side="right", padx=2)
 
     def show_about(self):
-        """Zeigt einen Informationsdialog über die Anwendung an."""
-        from tkinter import messagebox
-
-        messagebox.showinfo(
-            "Über",
-            f"PlantUML zu Draw.io Konverter\nVersion {VERSION}\n© 2025 doubleSlash.de",
+        """Display the about dialog with version information."""
+        about_text = (
+            f"PlantUML to Draw.io Converter\n"
+            f"Version: {VERSION}\n\n"
+            "Created by doubleSlash.de"
         )
+        self.show_info("About", about_text)
+
+    def show_error(self, message: str):
+        """Display an error message dialog.
+
+        Args:
+            message: The error message to display.
+        """
+        self.ctk.CTkMessagebox(title="Error", message=message, icon="cancel")
+
+    def show_success(self, message: str):
+        """Display a success message dialog.
+
+        Args:
+            message: The success message to display.
+        """
+        self.ctk.CTkMessagebox(title="Success", message=message, icon="check")
+
+    def show_info(self, title: str, message: str):
+        """Display an information dialog.
+
+        Args:
+            title: The dialog title.
+            message: The information message to display.
+        """
+        self.ctk.CTkMessagebox(title=title, message=message, icon="info")
 
     def open_file(self):
         from tkinter import filedialog
@@ -453,25 +491,22 @@ class FileSelectorApp:
                 start_idx = end_pos
 
     def convert_to_drawio(self):
-        # Importiere die benötigten Module erst jetzt, da sie nur für die Konvertierung benötigt werden
-        from tkinter import filedialog
+        """Convert the current PlantUML diagram to Draw.io format.
 
-        from plantuml2drawio.processors.activity_processor import (
-            Edge, Node, create_activity_drawio_xml, layout_activity_diagram,
-            parse_activity_diagram)
-
-        # Hole den Inhalt des Text-Widgets (PlantUML-Code)
-        plantuml_code = self.text_widget.get("1.0", "end")
-        if not plantuml_code.strip():
-            self.message_label.configure(
-                text="Kein PlantUML-Code für die Konvertierung verfügbar."
-            )
-            return
-
+        This method handles the conversion process and saves the result
+        to a new file with the appropriate extension.
+        """
         try:
+            input_file = self.text_widget.get("1.0", "end")
+            if not input_file.strip():
+                self.message_label.configure(
+                    text="Kein PlantUML-Code für die Konvertierung verfügbar."
+                )
+                return
+
             # Parse PlantUML code into nodes and edges
             try:
-                diagram_data = parse_activity_diagram(plantuml_code)
+                diagram_data = parse_activity_diagram(input_file)
                 nodes = [
                     Node(
                         id=node["id"],
@@ -570,23 +605,14 @@ def main():
     root.title("plantuml2drawio")
 
     # Icon-Handling verzögern - wir benutzen ein Fallback ohne Exception
-    if sys.platform.startswith("win"):
-        try:
-            root.after(100, lambda: root.iconbitmap("p2dapp_icon.ico"))
-        except:
-            pass
-    else:
-
-        def set_icon():
-            try:
-                import tkinter as tk
-
-                icon = tk.PhotoImage(file="p2dapp_icon.png")
-                root.iconphoto(False, icon)
-            except:
-                pass
-
-        root.after(100, set_icon)
+    try:
+        root.after(100, lambda: root.iconbitmap("p2dapp_icon.ico"))
+    except FileNotFoundError:
+        # Icon file not found, continue without icon
+        pass
+    except Exception as e:
+        # Log other unexpected errors but continue
+        print(f"Warning: Could not set window icon: {e}", file=sys.stderr)
 
     app = FileSelectorApp(root)
 

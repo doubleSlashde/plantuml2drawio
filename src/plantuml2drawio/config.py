@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""
-Konfigurationsmodul für plantuml2drawio.
-Enthält Konfigurationsparameter und Konstanten für das gesamte Projekt.
+"""Configuration module for plantuml2drawio.
+
+Contains configuration parameters and constants for the entire project.
 """
 
 # Versionsinformationen

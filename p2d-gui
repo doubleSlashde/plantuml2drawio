@@ -2,8 +2,8 @@
 """
 GUI-Einstiegspunkt für plantuml2drawio.
 """
-import sys
 import os
+import sys
 
 # Füge das src-Verzeichnis zum Pythonpfad hinzu, wenn es im Entwicklungsmodus verwendet wird
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -11,4 +11,4 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 from src.plantuml2drawio.app import main
 
 if __name__ == "__main__":
-    main() 
+    main()

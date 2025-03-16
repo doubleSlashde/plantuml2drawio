@@ -1,6 +1,4 @@
-"""
-PlantUML to Draw.io Converter
-"""
+"""PlantUML to Draw.io Converter."""
 
 from .logging_config import setup_logging
 
