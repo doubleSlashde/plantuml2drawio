@@ -1,22 +1,22 @@
 -r requirements.txt
 
 # Building
-pyinstaller==6.4.0
+pyinstaller>=6.4.0
 
 # Testing
-pytest==8.1.1
-pytest-cov==4.1.0
+pytest>=8.1.1
+pytest-cov>=4.1.0
 
 # Code Quality
-black==24.2.0
-isort==5.13.2
-flake8==7.0.0
-mypy==1.9.0
-pre-commit==3.6.2
+black>=24.2.0
+isort>=5.13.2
+flake8>=7.0.0
+mypy>=1.9.0
+pre-commit>=3.6.2
 
 # Documentation
-sphinx==7.2.6
-sphinx-rtd-theme==2.0.0
+sphinx>=7.2.6
+sphinx-rtd-theme>=2.0.0
 
 sphinx-rtd-theme==2.0.0
 
