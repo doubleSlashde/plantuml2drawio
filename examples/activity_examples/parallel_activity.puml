@@ -1,0 +1,33 @@
+@startuml
+!include https://raw.githubusercontent.com/doubleSlashde/umltheme/main/puml-theme-doubleslash-activity.puml
+
+title Search Flow
+
+Start
+
+if (User is logged in?) then (yes)
+  :Capture user ID (optional);
+else (no)
+  :Proceed anonymously;
+endif
+
+:Enter search query;
+:API Call;
+:Tokenization, Synonym Handling, etc.;
+
+fork
+  :Search by description;
+fork again
+  :Search by name;
+fork again
+  :Process by article number;
+end fork
+:Send search request to OpenSearch;
+:Retrieve matching product data;
+:Return search results;
+:Sorting;
+:Ranking;
+:Return best match;
+:Display search results;
+stop
+@enduml

@@ -130,6 +130,7 @@ stop
 ## 🗺️ Roadmap
 
 - [x] Support for activity diagrams
+- [ ] Support for usecase diagrams
 - [ ] Support for sequence diagrams
 - [ ] Support for class diagrams
 - [ ] Support for component diagrams
