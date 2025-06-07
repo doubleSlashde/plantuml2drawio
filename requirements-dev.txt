@@ -17,11 +17,3 @@ pre-commit>=3.6.2
 # Documentation
 sphinx>=7.2.6
 sphinx-rtd-theme>=2.0.0
-
-from plantuml2drawio.logging_config import setup_logging
-
-setup_logging(
-    log_level="DEBUG",
-    log_file="app.log",
-    log_format="%(asctime)s - %(levelname)s - %(message)s"
-)
