@@ -61,11 +61,16 @@ jobs:
       - name: Build Windows executable
         run: python -m PyInstaller --clean p2d.spec
 
+      - name: Debug - List dist directory
+        shell: cmd
+        run: |
+          dir dist /s
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: p2d-windows
-          path: dist/p2d.exe
+          path: dist/p2d/**/*
 
   build-macos:
     runs-on: macos-latest
