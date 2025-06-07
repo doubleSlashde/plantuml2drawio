@@ -60,11 +60,6 @@ jobs:
       - name: Build Windows executable
         run: python -m PyInstaller --clean p2d.spec
 
-      - name: Debug - List dist directory
-        shell: cmd
-        run: |
-          dir dist /s
-
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
