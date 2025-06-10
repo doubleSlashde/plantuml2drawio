@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: p2d-windows
-          path: dist/p2d/**/*
+          path: dist/p2d/p2d.exe
 
   build-macos:
     runs-on: macos-latest
