@@ -134,11 +134,17 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
+      - name: Create macOS ZIP
+        run: |
+          cd p2d-macos
+          zip -r ../p2d-macos.zip p2d.app
+          cd ..
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             p2d-windows/p2d.exe
-            p2d-macos/p2d.app/**/*
+            p2d-macos.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
