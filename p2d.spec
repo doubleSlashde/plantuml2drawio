@@ -3,10 +3,10 @@
 
 a = Analysis(
     ['src/plantuml2drawio/app.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[],
     datas=[],
-    hiddenimports=[],
+    hiddenimports=['plantuml2drawio'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -19,16 +19,13 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='p2d',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -37,8 +34,20 @@ exe = EXE(
     entitlements_file=None,
     icon=['resources/icons/p2d_icon.icns'],
 )
-app = BUNDLE(
+
+coll = COLLECT(
     exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='p2d'
+)
+
+app = BUNDLE(
+    coll,
     name='p2d.app',
     icon='resources/icons/p2d_icon.icns',
     bundle_identifier=None,

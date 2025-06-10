@@ -127,6 +127,37 @@ stop
 - Regular expressions for parsing
 - XML libraries for Draw.io generation
 
+## 📦 Executables
+
+The project provides pre-built executables for both Windows and macOS through GitHub Actions. These executables are automatically built when:
+- A new version tag is pushed (e.g., `v1.0.0`)
+- The workflow is manually triggered via GitHub Actions UI
+
+### Download Executables
+
+1. Go to the [Releases](https://github.com/doubleSlashde/plantuml2drawio/releases) page to download the latest release
+2. Or download the latest build artifacts from the [Actions](https://github.com/doubleSlashde/plantuml2drawio/actions) page:
+   - `p2d-windows` - Windows executable with all dependencies
+   - `p2d-macos` - macOS application bundle (.app)
+
+### Building Executables Locally
+
+You can build the executables locally using PyInstaller. You only need the runtime dependencies and PyInstaller:
+
+```bash
+# Install build requirements (includes runtime dependencies)
+pip install -r requirements-build.txt
+
+# Build executable
+python -m PyInstaller --clean p2d.spec
+```
+
+The built executables will be available in the `dist` directory:
+- Windows: `dist/p2d/p2d.exe` (with dependencies)
+- macOS: `dist/p2d.app` (application bundle)
+
+Note: The final executable will include all necessary runtime dependencies, so end users don't need to install Python or any requirements.
+
 ## 🗺️ Roadmap
 
 - [x] Support for activity diagrams
