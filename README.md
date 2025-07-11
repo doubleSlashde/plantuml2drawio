@@ -29,6 +29,11 @@ This project enables the conversion of PlantUML diagrams to Draw.io format, allo
 git clone https://github.com/doubleSlash-net/plantuml2drawio.git
 cd plantuml2drawio
 
+# Recommended: Use Python 3.11 for best compatibility
+# Create and activate a virtual environment (optional but recommended)
+python3.11 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # Install dependencies
 pip install -r requirements.txt
 
@@ -68,8 +73,8 @@ plantuml2drawio/
 ├── LICENSE                      # License information
 ├── requirements.txt             # Python dependencies
 ├── setup.py                     # Setup script for installation
-├── plantuml2drawio-cli          # Command-line entry point
-├── plantuml2drawio-gui          # GUI entry point
+├── p2d-cli                      # Command-line entry point
+├── p2d-gui                      # GUI entry point
 ├── src/                         # Main source code
 │   ├── plantuml2drawio/         # Core package
 │   │   ├── core.py              # Core functionality
@@ -122,7 +127,7 @@ stop
 
 ## 🛠️ Technology Stack
 
-- Python 3.6+
+- Python 3.11 (recommended) or 3.6+
 - customtkinter for GUI
 - Regular expressions for parsing
 - XML libraries for Draw.io generation
@@ -148,7 +153,7 @@ You can build the executables locally using PyInstaller. You only need the runti
 # Install build requirements (includes runtime dependencies)
 pip install -r requirements-build.txt
 
-# Build executable
+# Build executable (recommended with Python 3.11)
 python -m PyInstaller --clean p2d.spec
 ```
 
@@ -213,6 +218,11 @@ Dieses Projekt ermöglicht die Konvertierung von PlantUML-Diagrammen in das Draw
 # Repository klonen
 git clone https://github.com/doubleSlash-net/plantuml2drawio.git
 cd plantuml2drawio
+
+# Empfohlen: Python 3.11 für beste Kompatibilität verwenden
+# Virtuelle Umgebung erstellen und aktivieren (optional, aber empfohlen)
+python3.11 -m venv venv
+source venv/bin/activate  # Unter Windows: venv\Scripts\activate
 
 # Abhängigkeiten installieren
 pip install -r requirements.txt

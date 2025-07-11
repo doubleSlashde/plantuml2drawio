@@ -2,11 +2,18 @@
 import os
 import sys
 
-# Importiere die Version aus der config.py
-from plantuml2drawio.config import VERSION, VERSION_DATE
-# Importiere die Funktion aus dem neuen Modul mit dem neuen Namen
-from plantuml2drawio.processors.activity_processor import \
-    is_valid_activity_diagram
+# Set environment variable to silence Tk deprecation warning
+os.environ['TK_SILENCE_DEPRECATION'] = '1'
+
+# Try to import from installed package or development path
+try:
+    # Installed package path
+    from plantuml2drawio.config import VERSION, VERSION_DATE
+    from plantuml2drawio.processors.activity_processor import is_valid_activity_diagram
+except ImportError:
+    # Development path
+    from src.plantuml2drawio.config import VERSION, VERSION_DATE
+    from src.plantuml2drawio.processors.activity_processor import is_valid_activity_diagram
 
 
 class FileSelectorApp:

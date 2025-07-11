@@ -7,8 +7,15 @@ import uuid
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Union
 
-from plantuml2drawio.models import Edge, Node
-from plantuml2drawio.processors.base_processor import BaseDiagramProcessor
+# Try to import from installed package or development path
+try:
+    # Installed package path
+    from plantuml2drawio.models import Edge, Node
+    from plantuml2drawio.processors.base_processor import BaseDiagramProcessor
+except ImportError:
+    # Development path
+    from src.plantuml2drawio.models import Edge, Node
+    from src.plantuml2drawio.processors.base_processor import BaseDiagramProcessor
 
 # Predefined regex patterns for better performance
 RE_ACTIVITY = re.compile(
