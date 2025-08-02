@@ -45,8 +45,9 @@ jobs:
 
       - name: Build Windows executable
         run: |
-          python build_scripts/build_windows.py
+          python build_windows.py
         shell: powershell
+        working-directory: build-scripts
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
