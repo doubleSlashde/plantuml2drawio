@@ -100,12 +100,22 @@ jobs:
       - name: Set execute permissions
         run: |
           chmod +x dist/mac/PlantUML2DrawIO.app/Contents/MacOS/PlantUML2DrawIO
+          # Set permissions for all files in the app bundle
+          find dist/mac/PlantUML2DrawIO.app -type f -exec chmod 644 {} \;
+          find dist/mac/PlantUML2DrawIO.app -type d -exec chmod 755 {} \;
+          chmod 755 dist/mac/PlantUML2DrawIO.app/Contents/MacOS/PlantUML2DrawIO
+
+      - name: Create macOS ZIP with proper permissions
+        run: |
+          cd dist/mac
+          ditto -c -k --keepParent PlantUML2DrawIO.app PlantUML2DrawIO-macOS.zip
+          cd ../..
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: p2d-macos
-          path: dist/mac/**
+          path: dist/mac/PlantUML2DrawIO-macOS.zip
           if-no-files-found: error
 
   create-release:
@@ -130,11 +140,9 @@ jobs:
           name: p2d-macos
           path: mac
 
-      - name: Create macOS ZIP
+      - name: Rename macOS ZIP for release
         run: |
-          cd mac
-          zip -r ../p2d-macos.zip .
-          cd ..
+          mv mac/PlantUML2DrawIO-macOS.zip p2d-macos.zip
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
