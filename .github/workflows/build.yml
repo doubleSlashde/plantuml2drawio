@@ -97,6 +97,10 @@ jobs:
           python build_mac.py
         working-directory: build-scripts
 
+      - name: Set execute permissions
+        run: |
+          chmod +x dist/mac/PlantUML2DrawIO.app/Contents/MacOS/PlantUML2DrawIO
+
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:

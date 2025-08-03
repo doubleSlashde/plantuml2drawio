@@ -46,6 +46,12 @@ def build_mac(codesign=False, identity=None, entitlements=None, notarize=False, 
         app_path = dist_dir / "PlantUML2DrawIO.app"
         print(f"Built: {app_path}")
 
+        # Set execute permissions on the executable
+        executable_path = app_path / "Contents" / "MacOS" / "PlantUML2DrawIO"
+        if executable_path.exists():
+            os.chmod(executable_path, 0o755)
+            print(f"Set execute permissions on: {executable_path}")
+
         if codesign:
             sign_app(app_path, identity, entitlements)
             if notarize:
