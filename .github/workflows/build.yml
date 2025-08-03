@@ -25,46 +25,36 @@ jobs:
       - name: Update version numbers
         shell: python
         run: |
-          import re
-          import os
+          import re, os
           from datetime import datetime
-
-          # Get version from git tag
           version = os.environ['GITHUB_REF'].split('/')[-1].replace('v', '')
-
-          # Update version in files
           files_to_update = [
               'src/plantuml2drawio/app.py',
               'src/plantuml2drawio/config.py',
               'src/plantuml2drawio/__init__.py',
               'setup.py'
           ]
-
-          for file_path in files_to_update:
-              with open(file_path, 'r', encoding='utf-8') as f:
-                  content = f.read()
-
-              # Update version strings
-              content = re.sub(r'VERSION = "[^"]*"', f'VERSION = "{version}"', content)
-              content = re.sub(r'__version__ = "[^"]*"', f'__version__ = "{version}"', content)
-              content = re.sub(r'version="[^"]*"', f'version="{version}"', content)
-
-              # Update version date in config.py
-              if 'config.py' in file_path:
-                  today = datetime.now().strftime('%Y-%m-%d')
-                  content = re.sub(r'VERSION_DATE = "[^"]*"', f'VERSION_DATE = "{today}"', content)
-
-              with open(file_path, 'w', encoding='utf-8') as f:
-                  f.write(content)
+          for path in files_to_update:
+              txt = open(path, encoding='utf-8').read()
+              txt = re.sub(r'VERSION = "[^"]*"', f'VERSION = "{version}"', txt)
+              txt = re.sub(r'__version__ = "[^"]*"', f'__version__ = "{version}"', txt)
+              txt = re.sub(r'version="[^"]*"', f'version="{version}"', txt)
+              if path.endswith('config.py'):
+                  txt = re.sub(r'VERSION_DATE = "[^"]*"', f'VERSION_DATE = "{datetime.now():%Y-%m-%d}"', txt)
+              open(path, 'w', encoding='utf-8').write(txt)
 
       - name: Build Windows executable
-        run: python -m PyInstaller --clean p2d.spec
+        run: |
+          python build_windows.py
+        shell: powershell
+        working-directory: build-scripts
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: p2d-windows
-          path: dist/p2d/p2d.exe
+          path: dist/windows/PlantUML2DrawIO/**
+          if-no-files-found: error
 
   build-macos:
     runs-on: macos-latest
@@ -84,46 +74,35 @@ jobs:
       - name: Update version numbers
         shell: python
         run: |
-          import re
-          import os
+          import re, os
           from datetime import datetime
-
-          # Get version from git tag
           version = os.environ['GITHUB_REF'].split('/')[-1].replace('v', '')
-
-          # Update version in files
           files_to_update = [
               'src/plantuml2drawio/app.py',
               'src/plantuml2drawio/config.py',
               'src/plantuml2drawio/__init__.py',
               'setup.py'
           ]
-
-          for file_path in files_to_update:
-              with open(file_path, 'r', encoding='utf-8') as f:
-                  content = f.read()
-
-              # Update version strings
-              content = re.sub(r'VERSION = "[^"]*"', f'VERSION = "{version}"', content)
-              content = re.sub(r'__version__ = "[^"]*"', f'__version__ = "{version}"', content)
-              content = re.sub(r'version="[^"]*"', f'version="{version}"', content)
-
-              # Update version date in config.py
-              if 'config.py' in file_path:
-                  today = datetime.now().strftime('%Y-%m-%d')
-                  content = re.sub(r'VERSION_DATE = "[^"]*"', f'VERSION_DATE = "{today}"', content)
-
-              with open(file_path, 'w', encoding='utf-8') as f:
-                  f.write(content)
+          for path in files_to_update:
+              txt = open(path, encoding='utf-8').read()
+              txt = re.sub(r'VERSION = "[^"]*"', f'VERSION = "{version}"', txt)
+              txt = re.sub(r'__version__ = "[^"]*"', f'__version__ = "{version}"', txt)
+              txt = re.sub(r'version="[^"]*"', f'version="{version}"', txt)
+              if path.endswith('config.py'):
+                  txt = re.sub(r'VERSION_DATE = "[^"]*"', f'VERSION_DATE = "{datetime.now():%Y-%m-%d}"', txt)
+              open(path, 'w', encoding='utf-8').write(txt)
 
       - name: Build macOS app
-        run: python -m PyInstaller --clean p2d.spec
+        run: |
+          python build_mac.py
+        working-directory: build-scripts
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: p2d-macos
-          path: dist/p2d.app
+          path: dist/mac/**
+          if-no-files-found: error
 
   create-release:
     needs: [build-windows, build-macos]
@@ -131,20 +110,33 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: p2d-windows
+          path: win
+
+      - name: Create Windows zip
+        run: |
+          cd win
+          zip -r ../p2d-windows.zip .
+          cd ..
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: p2d-mac
+          path: mac
 
       - name: Create macOS ZIP
         run: |
-          cd p2d-macos
-          zip -r ../p2d-macos.zip p2d.app
+          cd mac
+          zip -r ../p2d-macos.zip .
           cd ..
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            p2d-windows/p2d.exe
+            p2d-windows.zip
             p2d-macos.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
