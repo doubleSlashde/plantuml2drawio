@@ -221,13 +221,47 @@ class ActivityDiagramProcessor(BaseDiagramProcessor):
         # Dictionary to track node IDs by labels to ensure we connect things properly
         node_id_map = {}
 
-        # Clean up the content: remove comments and empty lines
+        # Clean up the content: remove comments, empty lines, and merge multiline
+        # activities (": ... ;" across lines) and multiline if ( "if (...) then" )
         lines = content.split("\n")
         clean_lines = []
+        in_multiline_activity = False
+        activity_buffer = ""
+        in_multiline_if = False
+        if_buffer = ""
+
         for line in lines:
             line = line.strip()
-            if line and not line.startswith("@") and not line.startswith("'"):
-                clean_lines.append(line)
+            if not line or line.startswith("@") or line.startswith("'"):
+                continue
+
+            if in_multiline_activity:
+                activity_buffer += "\n" + line
+                if line.endswith(";"):
+                    clean_lines.append(activity_buffer)
+                    in_multiline_activity = False
+                    activity_buffer = ""
+                continue
+
+            if line.startswith(":") and not line.endswith(";"):
+                in_multiline_activity = True
+                activity_buffer = line
+                continue
+
+            if in_multiline_if:
+                if_buffer += " " + line
+                if "then" in line.lower():
+                    clean_lines.append(if_buffer)
+                    in_multiline_if = False
+                    if_buffer = ""
+                continue
+
+            if line.lower().startswith("if (") and "then" not in line.lower():
+                in_multiline_if = True
+                if_buffer = line
+                continue
+
+            clean_lines.append(line)
 
         # Current node ID counter starting at 10 (0 and 1 are reserved)
         next_id = 10

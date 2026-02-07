@@ -4,9 +4,9 @@ import os
 import subprocess
 import tempfile
 
-from diagram_examples import (activity_diagram, class_diagram,
-                              component_diagram, erd_diagram, sequence_diagram,
-                              state_diagram, usecase_diagram)
+from .diagram_examples import (activity_diagram, class_diagram,
+                               component_diagram, erd_diagram, sequence_diagram,
+                               state_diagram, usecase_diagram)
 
 # Create a temporary directory for test files
 with tempfile.TemporaryDirectory() as temp_dir:
