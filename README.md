@@ -26,7 +26,7 @@ This project enables the conversion of PlantUML diagrams to Draw.io format, allo
 
 ```bash
 # Clone repository
-git clone https://github.com/doubleSlash-net/plantuml2drawio.git
+git clone https://github.com/doubleSlashde/plantuml2drawio.git
 cd plantuml2drawio
 
 # Recommended: Use Python 3.11 for best compatibility
@@ -216,7 +216,7 @@ Dieses Projekt ermöglicht die Konvertierung von PlantUML-Diagrammen in das Draw
 
 ```bash
 # Repository klonen
-git clone https://github.com/doubleSlash-net/plantuml2drawio.git
+git clone https://github.com/doubleSlashde/plantuml2drawio.git
 cd plantuml2drawio
 
 # Empfohlen: Python 3.11 für beste Kompatibilität verwenden
